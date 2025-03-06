@@ -1,0 +1,483 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    font-size: 12px; /* 文字サイズを12pxに設定 */
+}
+
+.header {
+    /* background-color: #333; */
+    background-color: white;
+    color: white;
+    padding: 0 0; /* パディングを増やしてスペースを確保 */
+    text-align: center;
+}
+
+.top-button {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin: 0px; /* マージンを増やしてスペースを確保 */
+}
+
+.top-button button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 15px 30px; /* パディングを増やしてスペースを確保 */
+    cursor: pointer;
+    margin-bottom: 10px; /* ボタン間のスペースを確保 */
+}
+
+.top-button button:hover {
+    background-color: #45a049;
+}
+
+.side_bar {
+    width: 250px; /* 幅を広げてスペースを確保 */
+    float: left;
+    /* background-color: #333; */
+    background-color: white;
+    color: white;
+    height: 100vh;
+    padding: 20px; /* パディングを増やしてスペースを確保 */
+}
+
+.side_bar .tablinks {
+    display: block;
+    /* background-color: #333; */
+    background-color: white;
+    color: white;
+    padding: 15px; /* パディングを増やしてスペースを確保 */
+    text-align: left;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    margin-bottom: 10px; /* ボタン間のスペースを確保 */
+}
+
+.side_bar .tablinks:hover {
+    /* background-color: #575757; */
+    background-color: white;
+}
+
+.each_data {
+    margin-left: 270px; /* サイドバーの幅に合わせて調整 */
+    padding: 20px;
+}
+
+.each_data h3 {
+    color: #333;
+    margin-bottom: 20px; /* 見出しとリストの間にスペースを確保 */
+}
+
+.each_data ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.each_data li {
+    background-color: white;
+    margin: 15px 0; /* リストアイテム間のスペースを確保 */
+    padding: 15px; /* パディングを増やしてスペースを確保 */
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.each_data button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px; /* パディングを増やしてスペースを確保 */
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.each_data button:hover {
+    background-color: #45a049;
+}
+
+.login h1, .login h2 {
+    color: #333;
+    margin-bottom: 20px; /* 見出しとボタンの間にスペースを確保 */
+}
+
+.login input[type="button"] {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 15px 30px; /* パディングを増やしてスペースを確保 */
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.login input[type="button"]:hover {
+    background-color: #45a049;
+}
+
+.insert form {
+    background-color: white;
+    /* padding: 30px; */
+    /* border: 1px solid #ddd; */
+    border-radius: 5px;
+    margin-bottom: 20px; /* フォームと他の要素の間にスペースを確保 */
+}
+
+.insert label {
+    display: block;
+    margin-bottom: 15px; /* ラベルとテキストエリアの間にスペースを確保 */
+}
+
+.insert textarea {
+    width: 100%;
+    height: 300px; /* Increase height to accommodate more text */
+    /* padding: 15px; */
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 12px; /* 文字サイズを12pxに設定 */
+    max-length: 1000; /* Set max length to 1000 characters */
+}
+
+.insert .form-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px; /* フォーム行間のスペースを確保 */
+}
+
+.insert .form-row label {
+    flex: 1;
+    /* margin-right: 10px; */
+}
+
+.insert .form-row label:last-child {
+    margin-right: 0;
+}
+
+.insert button.submit {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 15px 30px; /* パディングを増やしてスペースを確保 */
+    cursor: pointer;
+}
+
+.insert button.submit:hover {
+    background-color: #45a049;
+}
+
+/* submitの表示位置はz軸が上の、追従表示で画面上部(編集中のtextareaにz軸上にかぶさって表示 */
+.submit {
+    position: fixed;
+    top: 0;
+    right: 10rem;
+}
+
+.message .error {
+    color: red;
+    margin-top: 20px; /* エラーメッセージと他の要素の間にスペースを確保 */
+}
+
+.message .success {
+    color: green;
+    margin-top: 20px; /* 成功メッセージと他の要素の間にスペースを確保 */
+}
+
+.link-id {
+    font-size: 0.8em;
+    color: #ccc; /* Change color to a shade close to white */
+}
+
+.menu-button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+
+/* サイドバー */
+.sidebar {
+    position: fixed;
+    top: 0;
+    left: -250px;
+    width: 250px;
+    height: 100%;
+    /* 薄い灰色 */
+    background: #333;
+    /* グレイに近い白 */
+    /* background: cornsilk; */
+    background: #f7f6f5;
+    color: white;
+    padding: 20px;
+    transition: left 0.3s ease-in-out;
+}
+
+.sidebar.open {
+    left: 0;
+}
+
+.sidebar .close-button {
+    background: none;
+    border: none;
+    color: gray;
+    /* color: white; */
+    font-size: 24px;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.sidebar h2 {
+    margin-bottom: 20px;
+}
+
+.sidebar ul {
+    list-style: none;
+}
+
+.sidebar ul li {
+    margin: 15px 0;
+}
+
+.sidebar ul li a {
+    color: white;
+    text-decoration: none;
+    display: block;
+    padding: 15px; /* パディングを増やしてスペースを確保 */
+}
+
+.sidebar ul li a:hover {
+    /* background: #444; */
+    background: white;
+}
+
+/* メインコンテンツ */
+.content {
+    margin: 20px;
+    padding: 20px;
+    background: white;
+    border-radius: 8px;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-buttons .tablinks {
+    margin-bottom: 10px;
+}
+
+.content button {
+    font-size: 0.5em; /* サイズを半分に */
+    /* color: gray; */
+    color: white;
+    text-decoration: underline; /* 下線を追加 */
+    background: none; /* 背景を透明に */
+    border: none; /* ボーダーをなしに */
+    cursor: pointer; /* クリッカブルに */
+}
+
+.content button:hover {
+    color: darkgray; /* ホバー時の色を変更 */
+}
+
+.home-button {
+    background: none;
+    border: none;
+    color: #1565c0;
+    font-size: 3rem;
+    cursor: pointer;
+    margin-bottom: 20px;
+    margin-right: 2rem;
+}
+
+
+.clear_filters_div {
+    /* 背景黒色 */
+    background: #333;
+    /* margin top 0.5rem */
+    margin-top: 0.5rem;
+
+}
+
+.gsi-material-button {
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    -webkit-appearance: none;
+    background-color: WHITE;
+    background-image: none;
+    border: 1px solid #747775;
+    -webkit-border-radius: 4px;
+    border-radius: 4px;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    color: #1f1f1f;
+    cursor: pointer;
+    font-family: 'Roboto', arial, sans-serif;
+    font-size: 14px;
+    height: 40px;
+    letter-spacing: 0.25px;
+    outline: none;
+    overflow: hidden;
+    padding: 0 12px;
+    position: relative;
+    text-align: center;
+    -webkit-transition: background-color .218s, border-color .218s, box-shadow .218s;
+    transition: background-color .218s, border-color .218s, box-shadow .218s;
+    vertical-align: middle;
+    white-space: nowrap;
+    width: auto;
+    max-width: 400px;
+    min-width: min-content;
+  }
+  
+  .gsi-material-button .gsi-material-button-icon {
+    height: 20px;
+    margin-right: 12px;
+    min-width: 20px;
+    width: 20px;
+  }
+  
+  .gsi-material-button .gsi-material-button-content-wrapper {
+    -webkit-align-items: center;
+    align-items: center;
+    display: flex;
+    -webkit-flex-direction: row;
+    flex-direction: row;
+    -webkit-flex-wrap: nowrap;
+    flex-wrap: nowrap;
+    height: 100%;
+    justify-content: space-between;
+    position: relative;
+    width: 100%;
+  }
+  
+  .gsi-material-button .gsi-material-button-contents {
+    -webkit-flex-grow: 1;
+    flex-grow: 1;
+    font-family: 'Roboto', arial, sans-serif;
+    font-weight: 500;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: top;
+  }
+  
+  .gsi-material-button .gsi-material-button-state {
+    -webkit-transition: opacity .218s;
+    transition: opacity .218s;
+    bottom: 0;
+    left: 0;
+    opacity: 0;
+    position: absolute;
+    right: 0;
+    top: 0;
+  }
+  
+  .gsi-material-button:disabled {
+    cursor: default;
+    background-color: #ffffff61;
+    border-color: #1f1f1f1f;
+  }
+  
+  .gsi-material-button:disabled .gsi-material-button-contents {
+    opacity: 38%;
+  }
+  
+  .gsi-material-button:disabled .gsi-material-button-icon {
+    opacity: 38%;
+  }
+  
+  .gsi-material-button:not(:disabled):active .gsi-material-button-state, 
+  .gsi-material-button:not(:disabled):focus .gsi-material-button-state {
+    background-color: #303030;
+    opacity: 12%;
+  }
+  
+  .gsi-material-button:not(:disabled):hover {
+    -webkit-box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .30), 0 1px 3px 1px rgba(60, 64, 67, .15);
+    box-shadow: 0 1px 2px 0 rgba(60, 64, 67, .30), 0 1px 3px 1px rgba(60, 64, 67, .15);
+  }
+  
+  .gsi-material-button:not(:disabled):hover .gsi-material-button-state {
+    background-color: #303030;
+    opacity: 8%;
+  }
+  
+  .if-you-logged-in {
+    background-color: #f7f6f5; /* 背景色を設定 */
+    color: #333; /* 文字色を設定 */
+    padding: 10px 15px; /* パディングを設定 */
+    border: 1px solid #ddd; /* ボーダーを設定 */
+    border-radius: 5px; /* 角を丸くする */
+    margin-bottom: 20px; /* 下にスペースを確保 */
+    text-align: center; /* テキストを中央揃え */
+    font-size: 14px; /* フォントサイズを設定 */
+}
+
+.logged_in {
+    /* 文字色は薄い青色 */
+    color: #1565c0;
+    font-weight: bold; /* 太字に設定 */
+    font-size: 12px; /* フォントサイズを設定 */
+    margin: 10px 0; /* 上下にスペースを確保 */
+    display: inline-block; /* インラインブロックに設定 */
+}
+
+/* .signout-buttonをデコレーションして */
+.signout-button {
+    /* 背景色は白 */
+    background-color: white;
+    /* 文字色は薄い赤 */
+    color: #d32f2f;
+    /* ボーダーを設定 */
+    border: 1px solid #d32f2f;
+    /* パディングを設定 */
+    padding: 5px 10px;
+    /* ボーダーを角丸に */
+    border-radius: 5px;
+    /* テキストを中央揃え */
+    text-align: center;
+    /* フォントサイズを設定 */
+    font-size: 12px;
+    /* ホバー時のアニメーションを追加 */
+    transition: background-color 0.3s ease;
+    margin: 3rem 0; /* 上下にスペースを確保 */
+    display: inline-block; /* インラインブロックに設定 */
+}
+
+
+
+
+.insert button.preview {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 15px 30px; /* パディングを増やしてスペースを確保 */
+    cursor: pointer;
+}
+
+.insert button.preview:hover {
+    background-color: #45a049;
+}
+
+/* submitの表示位置はz軸が上の、追従表示で画面上部(編集中のtextareaにz軸上にかぶさって表示 */
+.preview {
+    position: fixed;
+    top: 0;
+    right: 20rem;
+}
+
+.preview-line {
+    /* preview-line同士の上下の隙間は0.5rem */
+    margin: 0.5rem 1rem;
+    /* paddingは0.5rem */
+    padding: 0.5rem;
+    /* 背景色は白 */
+
+
+}
