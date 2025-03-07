@@ -72,7 +72,7 @@
                             <p>所属するプロフィールの数: {{ groupProfilesCount(group.id) }}</p>
                             <ul>
                                 <li v-for="profile in profiles.filter(profile => profile.group === group.id && profile.status === 'OK')" :key="profile.id">
-                                    {{ profile.name }}, {{ profile.age }}, {{ profile.bio }}
+                                    {{ profile.name }},  {{ profile.bio }}
                                 </li>
                             </ul>
 
@@ -91,7 +91,7 @@
                 <ul class="profile-list">
                     <li v-for="(profile, index) in ownGroupProfiles" :key="index" class="profile-item">
                         <div class="profile-info">
-                            <h2>{{ profile.name }}, {{ profile.age }}</h2>
+                            <h2>{{ profile.name }}</h2>
                             <p>{{ profile.bio }}</p>
                             <p>グループ: {{ profile.group }}</p>
                             <p>ステータス: 
@@ -118,7 +118,7 @@
                             <!-- group idが一致したprofile一覧を表示する -->
                             <ul>
                                 <li v-for="profile in profiles.filter(profile => profile.group === group.id && profile.status === 'OK')" :key="profile.id">
-                                    {{ profile.name }}, {{ profile.age }}, {{ profile.bio }}
+                                    {{ profile.name }},  {{ profile.bio }}
                                     <button @click="requestProfile(profile)">リクエスト</button>
                                 </li>
                             </ul>

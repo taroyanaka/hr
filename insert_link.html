@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>insert link</title>
+<script src="./lib/firebasejs_8.6.1_firebase-app.js"></script>
+<script src="./lib/firebasejs_8.4.0_firebase-auth.js"></script>
+<script src="./lib/vue@3.2.36.global.prod.js"></script>
+
+<!-- reset.css -->
+<link rel="stylesheet" href="./lib/reset.css">
+<!-- insert_link.css -->
+<link rel="stylesheet" href="./lib/insert_link.css">
+<!-- Google Fonts Material Icons -->
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+<body>
+<div id="app">
+<header class="header">
+    <div class="top-button">
+        <a href="./b_p.html" class="home-button">
+            <span class="material-icons">home</span>
+        </a>
+    </div>
+</header>
+
+<div class="sidebar" :class="{ open: is_sidebar_open }" @click="toggle_sidebar">
+    <button @click.stop="toggle_sidebar" class="close-button">
+        <span class="material-icons">close</span>
+    </button>
+    <h2>Menu</h2>
+
+    <div>login
+        <h2>{{ login_result }}</h2>
+        <button class="gsi-material-button" v-if="!logged_in" @click="google_sign_in">
+            <div class="gsi-material-button-state"></div>
+            <div class="gsi-material-button-content-wrapper">
+                <div class="gsi-material-button-icon">
+                    <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" xmlns:xlink="http://www.w3.org/1999/xlink" style="display: block;">
+                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"></path>
+                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"></path>
+                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"></path>
+                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"></path>
+                        <path fill="none" d="M0 0h48v48H0z"></path>
+                    </svg>
+                </div>
+                <span class="gsi-material-button-contents">Sign in with Google</span>
+                <span style="display: none;">Sign in with Google</span>
+            </div>
+        </button>
+    </div>
+
+    <div class="menu-buttons" @click.stop>
+        <button class="tablinks" @click="open_city('all_data')">
+            <span class="material-icons">list</span> All Data
+        </button>
+        <!-- ログイン状態を表示。ログインしたら"Your Data"と"Insert"を利用できることを表記 -->
+        <div v-if="logged_in">
+            <span class="logged_in">ログイン中</span>
+        </div>
+        <div v-else>
+            <div class="if-you-logged-in">
+                ログインすると"Your Data"と"Insert"を利用できます
+            </div>
+        </div>
+
+        <button class="tablinks" @click="open_city('your_data')">
+            <span class="material-icons">person</span> Your Data
+        </button>
+        <button class="tablinks" @click="open_city('insert')">
+            <span class="material-icons">add</span> Insert
+        </button>
+    </div>
+    <div v-if="uid && username">
+        <button @click="googleSignOut" class="signout-button">ログアウト</button>
+    </div>
+
+</div>
+
+<div class="each_data content" @click="handle_outside_click">
+    <div v-show="current_tab === 'all_data'" class="all_data">
+        <h3>All Links</h3>
+        <div class="filters">
+            <label>Sort by:
+                <select v-model="sort_key" @change="toggle_sort_order">
+                    <!-- <option value="id">ID</option> -->
+                    <option value="created_at">Created At</option>
+                    <option value="data_length">Data Length</option>
+                </select>
+            </label>
+            <label>Search:
+                <input type="text" v-model="search_query" @input="filter_data">
+            </label>
+            <div class="clear_filters_div">
+            <button @click="clear_filters" class="clear_filters_button">
+                <span class="material-icons">clear</span> Clear Filters
+            </button>
+            </div>
+        </div>
+        <ul>
+            <li v-for="link in filtered_links" :key="link.id">
+                {{ truncate_text(JSON.parse(link.data_json_str).data1) }}<br>
+                {{ truncate_text(JSON.parse(link.data_json_str).data2) }}<br>
+                <span class="link-id">ID: {{ link.id }}</span>
+                <button v-if="logged_in && link.username !== username" @click="clone_link(link.id)">
+                    <span class="material-icons">content_copy</span> Clone
+                </button>
+            </li>
+        </ul>
+    </div>
+
+    <div v-show="current_tab === 'your_data'" class="your_data">
+        <h3>Your Data</h3>
+        <div v-else>
+            <div class="filters">
+                <label>Sort by:
+                    <select v-model="sort_key" @change="toggle_sort_order">
+                        <!-- <option value="id">ID</option> -->
+                        <option value="created_at">Created At</option>
+                        <option value="data_length">Data Length</option>
+                    </select>
+                </label>
+                <label>Search:
+                    <input type="text" v-model="search_query" @input="filter_data">
+                </label>
+                <button @click="clear_filters">
+                    <span class="material-icons">clear</span> Clear Filters
+                </button>
+            </div>
+            <ul>
+                <li v-for="link in filtered_links" :key="link.id">
+                    {{ truncate_text(JSON.parse(link.data_json_str).data1) }}<br>
+                    {{ truncate_text(JSON.parse(link.data_json_str).data2) }}<br>
+                    <span class="link-id">ID: {{ link.id }}</span>
+                    <button @click="delete_link(link.id)">
+                        <span class="material-icons">delete</span> Delete
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div v-show="current_tab === 'insert'" class="insert">
+        <form @submit.prevent="validate_and_submit" v-else>
+            <div class="form-row">
+                <label class="data1">
+                    <textarea v-model="data1" @input="validate_input"
+                     placeholder="Data including line breaks A" required maxlength="1000"></textarea>
+                </label>
+                <label class="data2">
+                    <textarea v-model="data2" @input="validate_input"
+                     placeholder="Data including line breaks B" required maxlength="1000"></textarea>
+                </label>
+            </div>
+            <div class="button-row">
+                <button type="submit" class="submit" v-if="!has_errors">
+                    <span class="material-icons">send</span> Submit
+                </button>
+            </div>
+            <div class="message">
+                <div v-if="error_message" class="error">{{ error_message }}</div>
+                <div v-if="success_message" class="success">{{ success_message }}</div>
+            </div>
+        </form>
+        <div v-if="show_preview" class="preview-content">
+            <h3>Preview</h3>
+            <ul>
+                <li v-for="(line, index) in preview_data" :key="index" class="preview-line">
+                    {{ line.data1 }} - {{ line.data2 }}
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+// Firebase の設定
+const firebase_config = {
+    apiKey: "AIzaSyBcOlIDP2KWbJuKM0WeMHNp-WvjTVfLt9Y",
+    authDomain: "p2auth-ea50a.firebaseapp.com",
+    projectId: "p2auth-ea50a",
+    storageBucket: "p2auth-ea50a.appspot.com",
+    messagingSenderId: "796225429484",
+    appId: "1:796225429484:web:ece56ef2fc0be28cd6eac9"
+};
+
+// Firebase 初期化
+firebase.initializeApp(firebase_config);
+
+const app = Vue.createApp({
+    data() {
+        return {
+            is_sidebar_open: false,
+            username: '',
+            uid: null,
+            logged_in: false,
+            login_result: '',
+            data1: '',
+//             data1: `aa
+// bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb
+// cc`,
+            data2: '',
+//             data2: `AA
+// BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB
+// C`,
+            error_message: '',
+            success_message: '',
+            user: null,
+            password: '',
+            enpnt: 'https://cotton-concrete-catsup.glitch.me',
+            user_links: [],
+            all_links: [],
+            current_tab: 'all_data', // 現在のタブを管理する変数
+            has_errors: true,
+            sort_key: 'created_at', // ソートキー
+            sort_order: 'desc', // ソート順を降順に設定
+            search_query: '', // 検索クエリ
+            show_preview: false, // プレビュー表示のフラグ
+            preview_data: [],
+        };
+    },
+    computed: {
+        filtered_links() {
+            let links = this.current_tab === 'all_data' ? this.all_links : this.user_links;
+
+            // 検索
+            if (this.search_query) {
+                links = links.filter(link => {
+                    const data = JSON.parse(link.data_json_str);
+                    return data.data1.includes(this.search_query) || data.data2.includes(this.search_query);
+                });
+            }
+
+            // ソート
+            links = links.sort((a, b) => {
+                let result = 0;
+                if (this.sort_key === 'created_at') {
+                    result = new Date(a.created_at) - new Date(b.created_at);
+                } else if (this.sort_key === 'data_length') {
+                    result = JSON.parse(a.data_json_str).data1.length - JSON.parse(b.data_json_str).data1.length;
+                }
+                return this.sort_order === 'asc' ? result : -result;
+            });
+
+            return links;
+        },
+        preview_data() {
+            const lines1 = this.data1.split('\n');
+            const lines2 = this.data2.split('\n');
+            return lines1.map((line, index) => ({
+                data1: line,
+                data2: lines2[index] || ''
+            }));
+        }
+    },
+    async mounted() {
+        if (!this.uid) {
+            firebase.auth().onAuthStateChanged(async user => {
+                if (user) {
+                    this.user = user;
+                    this.uid = user.uid;
+                    this.logged_in = true;
+                    try {
+                        await this.fetch_existing_user();
+                    } catch (error) {
+                        console.error('Error fetching existing user:', error);
+                    }
+                    await this.fetch_user_data();
+                }
+            });
+        }
+        document.addEventListener('click', this.handle_outside_click);
+    },
+    beforeUnmount() {
+        document.removeEventListener('click', this.handle_outside_click);
+    },
+    methods: {
+        async fetch_existing_user() {
+            if (!this.uid) {
+                throw new Error('ログインしていません');
+            }
+            const response = await fetch(`${this.enpnt}/existing_user`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ uid: this.uid })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed to fetch user: ${response.status} ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            this.username = result.message.id;
+            this.password = result.message.password;
+        },
+        async fetch_user_data() {
+            try {
+                const response = await fetch(`${this.enpnt}/read_all`);
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch user data: ${response.status} ${response.statusText}`);
+                }
+                const result = await response.json();
+                this.all_links = result.message;
+                if (this.logged_in && this.username) {
+                    this.user_links = this.all_links.filter(link => link.username === this.username);
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        },
+        async delete_link(id) {
+            try {
+                const response = await fetch(`${this.enpnt}/delete_link`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: id,
+                        name: this.username,
+                        password: this.password
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to delete link: ${response.status} ${response.statusText}`);
+                }
+
+                await this.fetch_user_data();
+            } catch (error) {
+                console.error('Error deleting link:', error);
+            }
+        },
+        replace_url_localhost() {
+            window.location.replace('http://localhost:3000/q_a/insert_link.html');
+        },
+        error_check_insert_data(data_type, data_json_str) {
+            const DATA_TYPE_ARRAY = [
+                'q_a',
+                'f_i_b',
+                'i_t_n',
+            ];
+            const is_include_data_type = (target_data_type_str) => DATA_TYPE_ARRAY.some((DATA_TYPE) => target_data_type_str === DATA_TYPE);
+
+            switch (true) {
+                case data_json_str === undefined: return 'dataが空です';
+                case data_json_str.length > 10000: return 'dataが長すぎます';
+                case !is_include_data_type(data_type): return '許可されていないdata_typeです';
+                default: return 'OK';
+            }
+        },
+        validate_input() {
+            const errors = validate_data(this.data1, this.data2);
+            this.error_message = errors.join(', ');
+            this.has_errors = errors.length > 0;
+            this.show_preview = !this.has_errors;
+            if (this.show_preview) {
+                this.preview_data = this.data1.split('\n').map((line, index) => ({
+                    data1: line,
+                    data2: this.data2.split('\n')[index] || ''
+                }));
+            }
+        },
+        async validate_and_submit() {
+            this.validate_input();
+            if (this.has_errors) {
+                return;
+            }
+
+            this.error_message = '';
+            this.success_message = '';
+
+            const data_json_str = JSON.stringify({ data1: this.data1, data2: this.data2 });
+            const validation_error = this.error_check_insert_data('q_a', data_json_str);
+            if (validation_error !== 'OK') {
+                this.error_message = validation_error;
+                return;
+            }
+
+            try {
+                const res = await fetch(`${this.enpnt}/insert_link`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        data_type: 'q_a',
+                        data_json_str: data_json_str,
+                        link: '',
+                        tags: [],
+                        likes: [],
+                        comments_and_replies: [],
+                        name: this.username,
+                        password: this.password
+                    })
+                });
+
+                const result = await res.json();
+
+                if (res.ok) {
+                    this.success_message = `Success: ${JSON.stringify(result)}`;
+                    await this.fetch_user_data();
+                    this.data1 = '';
+                    this.data2 = '';
+                } else {
+                    this.error_message = `Error: ${result.message}`;
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                this.error_message = `Error: ${error.message}`;
+            }
+        },
+        async clone_link(id) {
+            try {
+                const response = await fetch(`${this.enpnt}/clone_link`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: id,
+                        name: this.username,
+                        password: this.password
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to clone link: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                this.success_message = `Clone successful: ${result.message}`;
+                await this.fetch_user_data();
+            } catch (error) {
+                console.error('Error cloning link:', error);
+                this.error_message = `Error: ${error.message}`;
+            }
+        },
+        open_city(city_name) {
+            if (!this.logged_in && (city_name === 'your_data' || city_name === 'insert')) {
+                this.google_sign_in();
+            } else {
+                this.current_tab = city_name;
+            }
+            this.is_sidebar_open = false; // メニューバーを閉じる
+        },
+        async google_sign_in() {
+            try {
+                const provider = new firebase.auth.GoogleAuthProvider();
+                await firebase.auth().signInWithPopup(provider);
+            } catch (error) {
+                console.error('Error signing in:', error);
+                this.login_result = `Error: ${error.message}`;
+            }
+        },
+        async google_sign_out() {
+            try {
+                await firebase.auth().signOut();
+                this.logged_in = false;
+                this.login_result = 'Logged out';
+                this.username = '';
+                this.password = '';
+                this.user_links = [];
+                // google loginのボタンを即座に表示する(レンダリングする)
+                this.$forceUpdate();
+            } catch (error) {
+                console.error('Error signing out:', error);
+                this.login_result = `Error: ${error.message}`;
+            }
+        },
+        toggle_sidebar() {
+            this.is_sidebar_open = !this.is_sidebar_open;
+        },
+        handle_outside_click(event) {
+            const sidebar = document.querySelector('.sidebar');
+            if (this.is_sidebar_open && !sidebar.contains(event.target)) {
+                this.is_sidebar_open = false;
+            }
+        },
+        truncate_text(text) {
+            return text.length > 30 ? text.substring(0, 30) + '...' : text;
+        },
+        sort_data() {
+            this.filtered_links; // トリガーとしてcomputedプロパティを呼び出す
+        },
+        toggle_sort_order() {
+            this.sort_order = this.sort_order === 'asc' ? 'desc' : 'desc';
+            this.sort_data();
+        },
+        filter_data() {
+            this.filtered_links; // トリガーとしてcomputedプロパティを呼び出す
+        },
+        clear_filters() {
+            this.search_query = '';
+            this.sort_key = 'created_at'; // デフォルトをcreated_atに設定
+            this.sort_order = 'desc'; // デフォルトを降順に設定
+            this.filter_data();
+        },
+        async googleSignOut() {
+          try {
+            await firebase.auth().signOut();
+            this.logged_in = false;
+            this.username = '';
+            this.password = '';
+            this.user_links = [];
+            // google loginのボタンを即座に表示する(レンダリングする)
+            this.$forceUpdate();
+            } catch (error) {
+                console.error('Error signing out:', error);
+            }
+        },
+        toggle_preview() {
+            this.show_preview = !this.show_preview;
+            if (this.show_preview) {
+                this.preview_data = this.data1.split('\n').map((line, index) => ({
+                    data1: line,
+                    data2: this.data2.split('\n')[index] || ''
+                }));
+            }
+        },
+    },
+    created() {
+        document.addEventListener('click', this.handle_outside_click);
+    },
+    beforeUnmount() {
+        document.removeEventListener('click', this.handle_outside_click);
+    }
+}).mount('#app');
+
+function validate_data(data1, data2) {
+    // エラーリスト
+    const errors = [];
+
+    // 引数の存在チェック
+    if (typeof data1 !== 'string' || typeof data2 !== 'string') {
+        errors.push('data1とdata2の両方が必要です。');
+        return errors;
+    }
+
+    // 未入力チェック
+    if (data1.trim() === '') {
+        errors.push('data1を入力してください。');
+    }
+    if (data2.trim() === '') {
+        errors.push('data2を入力してください。');
+    }
+
+    // 総文字数チェック (改行を含めて2000文字以内)
+    const total_length = data1.length + data2.length;
+    if (total_length > 2000) {
+        errors.push('data1とdata2の合計文字数が2000文字を超えています。');
+    }
+
+    // 改行で分割して行単位のチェック
+    const lines1 = data1.split('\n');
+    const lines2 = data2.split('\n');
+
+    // 行数のチェック
+    if (lines1.length !== lines2.length) {
+        errors.push('data1とdata2の行数が一致していません。');
+    }
+
+    // 各行の検証
+    for (let i = 0; i < lines1.length; i++) {
+        if (lines1[i].trim() === '') {
+            errors.push(`data1の行 ${i + 1} が空白行です。`);
+        }
+        if (lines2[i].trim() === '') {
+            errors.push(`data2の行 ${i + 1} が空白行です。`);
+        }
+        if (lines1[i] !== lines1[i].trim()) {
+            errors.push(`data1の行 ${i + 1} の先頭または末尾に空白が含まれています。`);
+        }
+        if (lines2[i] !== lines2[i].trim()) {
+            errors.push(`data2の行 ${i + 1} の先頭または末尾に空白が含まれています。`);
+        }
+        if (lines1[i].length < 1 || lines1[i].length > 100) {
+            errors.push(`data1の行 ${i + 1} は1文字以上100文字以内である必要があります。`);
+        }
+        if (lines2[i].length < 1 || lines2[i].length > 100) {
+            errors.push(`data2の行 ${i + 1} は1文字以上100文字以内である必要があります。`);
+        }
+    }
+
+    return errors;
+}
+</script>
+</body>
+</html>
