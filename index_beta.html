@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>insert link</title>
+<script src="./lib/profiles_data.js"></script>
+<script src="./lib/firebasejs_8.6.1_firebase-app.js"></script>
+<script src="./lib/firebasejs_8.4.0_firebase-auth.js"></script>
+<script src="./lib/vue@3.5.13.global.prod.js"></script>
+<link rel="stylesheet" href="./lib/reset.css">
+<link rel="stylesheet" href="./lib/index.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+<body>
+<div id="app">
+<header class="header">
+    <div class="top-button">
+        <a href="./b_p.html" class="home-button">
+            <span class="material-icons">home</span>
+        </a>
+    </div>
+</header>
+
+<div class="sidebar" :class="{ open: is_sidebar_open }" @click="toggle_sidebar">
+    <button @click.stop="toggle_sidebar" class="close-button">
+        <span class="material-icons">close</span>
+    </button>
+    <h2>Menu</h2>
+
+    <div>login
+        <h2>{{ login_result }}</h2>
+        <button v-if="!logged_in" @click="google_sign_in">sing_in</button>
+    </div>
+
+    <div class="menu-buttons" @click.stop>
+    </div>
+
+    <div v-if="uid && username">
+        <button @click="googleSignOut" class="signout-button">ログアウト</button>
+    </div>
+</div>
+
+<div class="requested-que">
+    <h3>リクエストされたプロフィール</h3>
+    <ul>
+        <li v-for="request in filteredRequestedProfiles" :key="request.id">
+            {{ request.name }} ({{ request.group }})
+            <button @click="respondToRequest(request, 'accept')">許可</button>
+            <button @click="respondToRequest(request, 'reject')">拒否</button>
+        </li>
+    </ul>
+</div>
+
+<div class="each_data content" @click="handle_outside_click">
+    <div v-show="current_tab === 'dev'" class="all_data">
+        <label for="group-select">カレントグループを選択:</label>
+        <select id="group-select" v-model="current_group">
+            <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
+        </select>
+        <div class="profile-columns">
+            <div class="profile-column">
+                <h3>他のグループ</h3>
+                <ul class="profile-list">
+                    <li v-for="group in otherGroups" :key="group.id" class="profile-item">
+                        <div class="profile-info">
+                            <h2>{{ group.name }}</h2>
+                            <p>住所: {{ group.address }}</p>
+                            <p>営業時間: {{ group.hours }}</p>
+                            <p>所属するプロフィールの数: {{ groupProfilesCount(group.id) }}</p>
+                            <ul>
+                                <li v-for="profile in profiles.filter(profile => profile.group === group.id && profile.status === 'OK')" :key="profile.id">
+                                    {{ profile.name }}, {{ profile.age }}, {{ profile.bio }}
+                                </li>
+                            </ul>
+
+                            <p>
+                                <label>
+                                    <input type="checkbox" :checked="group.subscribe_from.includes(current_group)" @change="toggleSubscribe(group.id)">
+                                    サブスクライブ
+                                </label>
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="profile-column">
+                <h3>自分のグループ</h3>
+                <ul class="profile-list">
+                    <li v-for="(profile, index) in ownGroupProfiles" :key="index" class="profile-item">
+                        <div class="profile-info">
+                            <h2>{{ profile.name }}, {{ profile.age }}</h2>
+                            <p>{{ profile.bio }}</p>
+                            <p>グループ: {{ profile.group }}</p>
+                            <p>ステータス: 
+                                <label>
+                                    <input type="radio" v-model="profile.status" :value="'OK'"> OK
+                                </label>
+                                <label>
+                                    <input type="radio" v-model="profile.status" :value="'NG'"> NG
+                                </label>
+                            </p>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="profile-column">
+                <h3>サブスクライブしたグループ</h3>
+                <ul class="profile-list">
+                    <li v-for="group in subscribedGroups" :key="group.id" class="profile-item">
+                        <div class="profile-info">
+                            <h2>{{ group.name }}</h2>
+                            <p>住所: {{ group.address }}</p>
+                            <p>営業時間: {{ group.hours }}</p>
+                            <p>所属するプロフィールの数: {{ groupProfilesCount(group.id) }}</p>
+                            <!-- group idが一致したprofile一覧を表示する -->
+                            <ul>
+                                <li v-for="profile in profiles.filter(profile => profile.group === group.id && profile.status === 'OK')" :key="profile.id">
+                                    {{ profile.name }}, {{ profile.age }}, {{ profile.bio }}
+                                    <button @click="requestProfile(profile)">リクエスト</button>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+
+<script>
+const app = Vue.createApp({
+    data() {
+        return {
+            is_sidebar_open: false,
+            username: '',
+            uid: null,
+            logged_in: false,
+            login_result: '',
+            data1: '',
+            data2: '',
+            error_message: '',
+            success_message: '',
+            user: null,
+            password: '',
+            enpnt: 'https://cotton-concrete-catsup.glitch.me',
+            user_links: [],
+            all_links: [],
+            current_tab: 'dev', // 現在のタブを管理する変数
+            has_errors: true,
+            sort_key: 'created_at', // ソートキー
+            sort_order: 'desc', // ソート順を降順に設定
+            search_query: '', // 検索クエリ
+            show_preview: false, // プレビュー表示のフラグ
+            preview_data: [],
+            current_group: 'a', // カレントグループ
+            profiles: profiles_data,
+            groups: groups_data,
+            requestedProfiles: [], // リクエストされたプロフィール
+        };
+    },
+    computed: {
+        filteredProfiles() {
+            return this.profiles.filter(profile => profile.group !== this.current_group);
+        },
+        ownGroupProfiles() {
+            return this.profiles.filter(profile => profile.group === this.current_group);
+        },
+        subscribedGroups() {
+            return this.groups.filter(group => group.subscribe_from.includes(this.current_group));
+        },
+        otherGroups() {
+            return this.groups.filter(group => group.id !== this.current_group);
+        },
+        filteredRequestedProfiles() {
+            return this.requestedProfiles.filter(profile => profile.group === this.current_group);
+        }
+    },
+    methods: {
+        groupProfilesCount(groupId) {
+            return this.profiles.filter(profile => profile.group === groupId).length;
+        },
+        requestProfile(profile) {
+            // リクエストできたことをポップアップする
+            alert(`${profile.name}にリクエストを送信しました`);
+            this.requestedProfiles.push(profile);
+        },
+        respondToRequest(request, response) {
+            const message = response === 'accept' ? '許可のテンプレートメッセージ' : '拒否のテンプレートメッセージ';
+            alert(`${request.group}と${request.name}に${message}を送信しました`);
+            this.requestedProfiles = this.requestedProfiles.filter(p => p !== request);
+        },
+        toggleSubscribe(group_id) {
+            console.log(group_id);
+            const group = this.groups.find(group => group.id === group_id);
+            group.subscribe_from = group.subscribe_from.includes(this.current_group)
+                ? group.subscribe_from.filter(id => id !== this.current_group)
+                : [...group.subscribe_from, this.current_group];
+
+
+        },
+    },
+    mounted() {
+        this.groups.forEach(group => {
+            group.subscribe = group.subscribe_from.includes(this.current_group);
+        });
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
