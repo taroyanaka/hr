@@ -70,7 +70,6 @@
                             <p>住所: {{ group.address }}</p>
                             <p>営業時間: {{ group.hours }}</p>
                             <p>所属するプロフィールの数: {{ groupProfilesCount(group.id) }}</p>
-                            <!-- グループに所属するprofiles -->
                             <ul>
                                 <li v-for="profile in profiles.filter(profile => profile.group === group.id && profile.status === 'OK')" :key="profile.id">
                                     {{ profile.name }}, {{ profile.age }}, {{ profile.bio }}
@@ -79,7 +78,8 @@
 
                             <p>
                                 <label>
-                                    <input type="checkbox" v-model="group.subscribe"> サブスクライブ
+                                    <input type="checkbox" :checked="group.subscribe_from.includes(current_group)" @change="toggleSubscribe(group.id)">
+                                    サブスクライブ
                                 </label>
                             </p>
                         </div>
@@ -170,7 +170,7 @@ const app = Vue.createApp({
             return this.profiles.filter(profile => profile.group === this.current_group);
         },
         subscribedGroups() {
-            return this.groups.filter(group => group.subscribe);
+            return this.groups.filter(group => group.subscribe_from.includes(this.current_group));
         },
         otherGroups() {
             return this.groups.filter(group => group.id !== this.current_group);
@@ -192,7 +192,21 @@ const app = Vue.createApp({
             const message = response === 'accept' ? '許可のテンプレートメッセージ' : '拒否のテンプレートメッセージ';
             alert(`${request.group}と${request.name}に${message}を送信しました`);
             this.requestedProfiles = this.requestedProfiles.filter(p => p !== request);
-        }
+        },
+        toggleSubscribe(group_id) {
+            console.log(group_id);
+            const group = this.groups.find(group => group.id === group_id);
+            group.subscribe_from = group.subscribe_from.includes(this.current_group)
+                ? group.subscribe_from.filter(id => id !== this.current_group)
+                : [...group.subscribe_from, this.current_group];
+
+
+        },
+    },
+    mounted() {
+        this.groups.forEach(group => {
+            group.subscribe = group.subscribe_from.includes(this.current_group);
+        });
     }
 }).mount('#app');
 </script>
