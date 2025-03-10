@@ -54,6 +54,27 @@
     </ul>
 </div>
 
+<!-- input block for making group -->
+<div class="input-for-group">
+    <label for="new-group-name">新しいグループ名:</label>
+    <input type="text" id="new-group-name" v-model="newGroupName">
+    <button @click="createGroup">グループ作成</button>
+</div>
+
+<!-- input block for add profile -->
+<div class="input-for-profile">
+    <!-- optionでグループの選択が必須 -->
+    <label for="profile-name">プロフィール名:</label>
+    <input type="text" id="profile-name" v-model="newProfileName">
+    <label for="profile-bio">プロフィールの説明:</label>
+    <input type="text" id="profile-bio" v-model="newProfileBio">
+    <label for="profile-group">グループを選択:</label>
+    <select id="profile-group" v-model="newProfileGroup">
+        <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
+    </select>
+    <button @click="addProfile">プロフィール追加</button>
+</div>
+
 <div class="each_data content" @click="handle_outside_click">
     <div v-show="current_tab === 'dev'" class="all_data">
         <label for="group-select">カレントグループを選択:</label>
