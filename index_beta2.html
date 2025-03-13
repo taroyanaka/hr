@@ -18,11 +18,6 @@
 <body>
 <div id="app">
 <header class="header">
-    <!-- initializeをfetchするボタン -->
-    <button @click="fetchInitialize">initialize</button>
-    <button @click="test">test</button>
-
-
     <div class="top-button">
         <a href="./b_p.html" class="home-button">
             <span class="material-icons">home</span>
@@ -108,12 +103,9 @@
                 <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
             </select> -->
 
-            <!-- updateProfile -->
-<!-- const { name, bio, group_id, status } = profileData; -->
 
-<button v-else @click="updateProfile_button">更新</button>
-
-
+            <button v-if="editProfileId" @click="updateProfile(editProfileId)">更新</button>
+            <button v-else @click="addProfile">追加</button>
             <button @click="clearForm">クリア</button>
 
         </div>
@@ -203,8 +195,6 @@
 
 <script type="module">
 import { validateProfile, validateGroup } from './lib/validation.js';
-import { fetchProfiles, fetchGroups, addProfile, createGroup, deleteProfile, updateProfile, updateGroup, fetchInitialize } from './lib/api.js';
-import { test } from './lib/api.js';
 
 const app = Vue.createApp({
     data() {
@@ -214,9 +204,6 @@ const app = Vue.createApp({
             uid: null,
             logged_in: false,
             login_result: '',
-            current_tab: 'dev',
-
-
             newProfileName: '',
             newProfileBio: '',
             newProfileGroup: '',
@@ -224,11 +211,11 @@ const app = Vue.createApp({
             newGroupAddress: '',
             newGroupHoursStart: '',
             newGroupHoursEnd: '',
-            profiles: [],
-            groups: [],
+            profiles: profiles_data,
+            groups: groups_data,
             requestedProfiles: [], // リクエストされたプロフィール
-            current_group: '',
-            editProfileId: null,
+            current_group: '', // 追加
+            current_tab: 'dev' // 追加
         };
     },
     computed: {
@@ -236,7 +223,7 @@ const app = Vue.createApp({
             return this.profiles.filter(profile => profile.group !== this.current_group);
         },
         ownGroupProfiles() {
-            return this.profiles.filter(profile => profile.group_id === this.current_group);
+            return this.profiles.filter(profile => profile.group === this.current_group);
         },
         subscribedGroups() {
             return this.groups.filter(group => group.subscribe_from.includes(this.current_group));
@@ -271,36 +258,20 @@ const app = Vue.createApp({
             group.subscribe_from = group.subscribe_from.includes(this.current_group)
                 ? group.subscribe_from.filter(id => id !== this.current_group)
                 : [...group.subscribe_from, this.current_group];
-            this.updateGroup(group);
         },
         addProfile() {
-            console.log('Adding profile with:', {
-                name: this.newProfileName,
-                bio: this.newProfileBio,
-                group: this.newProfileGroup
-            });
-
             if (validateProfile(this.newProfileName, this.newProfileBio, this.newProfileGroup)) {
                 const newProfile = {
                     name: this.newProfileName,
                     bio: this.newProfileBio,
                     group: this.newProfileGroup,
-                    group_id: this.newProfileGroup, // group_idを追加
                     status: 'NG' // 初期ステータスをNGに設定
                 };
-                addProfile(newProfile)
-                .then(data => {
-                    newProfile.id = data.id;
-                    this.profiles.push(newProfile);
-                    this.newProfileName = '';
-                    this.newProfileBio = '';
-                    this.newProfileGroup = '';
-                    alert('プロフィールが正常に追加されました');
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('プロフィールの追加に失敗しました');
-                });
+                this.profiles.push(newProfile);
+                this.newProfileName = '';
+                this.newProfileBio = '';
+                this.newProfileGroup = '';
+                alert('プロフィールが正常に追加されました');
             } else {
                 alert('プロフィールの入力が無効です');
             }
@@ -311,136 +282,60 @@ const app = Vue.createApp({
             const validationResult = validateGroup(this.newGroupName, this.newGroupAddress, this.newGroupHoursStart, this.newGroupHoursEnd, existingGroups);
             
             if (validationResult === true) {
+                const newGroupId = this.groups.length > 0 ? Math.max(...this.groups.map(group => group.id)) + 1 : 1;
                 const newGroup = {
+                    id: newGroupId, // 新しいグループIDを連番に設定
                     name: this.newGroupName,
                     address: this.newGroupAddress,
                     hours: newGroupHours,
                     subscribe: false,
                     subscribe_from: []
                 };
-                createGroup(newGroup)
-                .then(data => {
-                    newGroup.id = data.id;
-                    this.groups.push(newGroup);
-                    this.newGroupName = '';
-                    this.newGroupAddress = '';
-                    this.newGroupHoursStart = '';
-                    this.newGroupHoursEnd = '';
-                    alert('グループが正常に作成されました');
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('グループの作成に失敗しました');
-                });
+                this.groups.push(newGroup);
+                this.newGroupName = '';
+                this.newGroupAddress = '';
+                this.newGroupHoursStart = '';
+                this.newGroupHoursEnd = '';
+                alert('グループが正常に作成されました');
             } else {
                 alert('グループの入力が無効です: ' + validationResult.join(', '));
             }
         },
         profiles_delete(profile_id) {
-            deleteProfile(profile_id)
-            .then(data => {
-                this.profiles = this.profiles.filter(profile => profile.id !== profile_id);
-                alert('プロフィールが正常に削除されました');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('プロフィールの削除に失敗しました');
-            });
+            // groupがcurrent_groupであるprofileのみ削除する
+            this.profiles = this.profiles.filter(profile => profile.id !== profile_id || profile.group !== this.current_group);
         },
-
-        fetchProfiles() {
-            fetchProfiles()
-                .then(data => {
-                    this.profiles = data;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        },
-        fetchGroups() {
-            fetchGroups()
-                .then(data => {
-                    this.groups = data;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                });
-        },
-        updateGroup(group) {
-            updateGroup(group)
-            .then(data => {
-                alert('グループが正常に更新されました');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('グループの更新に失敗しました');
-            });
-        },
-        fetchInitialize() {
-            fetchInitialize()
-                .then(data => {
-                    this.fetchProfiles();
-                    this.fetchGroups();
-                    this.requestedProfiles = [];
-                    alert('初期化が完了しました');
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('初期化に失敗しました');
-                });
-        },
-        clearForm() {
-            this.newProfileName = '';
-            this.newProfileBio = '';
-            this.newProfileGroup = '';
-            this.editProfileId = null;
-        },
-        editProfile(profile_id) {
-            const profile = this.profiles.find(profile => profile.id === profile_id);
-            this.newProfileName = profile.name;
-            this.newProfileBio = profile.bio;
-            this.newProfileGroup = profile.group;
-            this.editProfileId = profile_id;
-        },
-        test(){
-            test();
-        },
-        updateProfile_button(){
-            const profile_id = this.editProfileId;
-            console.log("profile_id");
-                console.log(profile_id);
-
-            if (validateProfile(this.newProfileName, this.newProfileBio, this.current_group)) {
-                console.log("profile_id");
-                console.log(profile_id);
+        updateProfile(profile_id) {
+            if (validateProfile(this.newProfileName, this.newProfileBio, this.newProfileGroup)) {
                 const profile = this.profiles.find(profile => profile.id === profile_id);
-                if (!profile) {
-                    alert('プロフィールが見つかりません');
-                    return;
-                }
                 profile.name = this.newProfileName;
                 profile.bio = this.newProfileBio;
-                profile.group_id = this.current_group; // 必要なパラメータを追加
-                profile.status = 'NG'; // 必要なパラメータを追加
-                console.log("profile");
-                console.log(profile);
-                updateProfile(profile_id, profile)
-                //   res.json({ message: 'Profile updated' });を受け取る
-                .then(data => {
-                    this.clearForm();
-                    //   res.json({ message: 'Profile updated' });を受け取る
-                    console.log(data);
-                })
-
+                profile.group = this.newProfileGroup;
+                this.clearForm();
+                alert('プロフィールが正常に更新されました');
             } else {
                 alert('プロフィールの入力が無効です');
             }
         },
 
+        editProfile(profile_id) {
+            const profile = this.profiles.find(profile => profile.id === profile_id);
+            this.editProfileId = profile.id;
+            this.newProfileName = profile.name;
+            this.newProfileBio = profile.bio;
+            this.newProfileGroup = profile.group;
+        },
+        clearForm() {
+            this.editProfileId = null;
+            this.newProfileName = '';
+            this.newProfileBio = '';
+            this.newProfileGroup = '';
+        },
     },
     mounted() {
-        this.fetchProfiles();
-        this.fetchGroups();
+        this.groups.forEach(group => {
+            group.subscribe = group.subscribe_from.includes(this.current_group);
+        });
     },
     watch: {
         current_group() {
