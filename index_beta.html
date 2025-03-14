@@ -127,7 +127,8 @@
 
 <div class="each_data content">
     <div v-show="current_tab === 'dev'" class="all_data">
-        <label for="group-select">カレントグループを選択:</label>
+        <label for="group-select"
+        >カレントグループを選択:</label>
         <select id="group-select" v-model="current_group">
             <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
         </select>
