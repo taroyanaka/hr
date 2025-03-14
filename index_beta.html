@@ -62,15 +62,19 @@
 
 
 <div class="input-for-group">
-    <label for="new-group-name">新しいグループ名:</label>
-    <input type="text" id="new-group-name" v-model="newGroupName">
-    <label for="new-group-address">住所:</label>
-    <input type="text" id="new-group-address" v-model="newGroupAddress">
-    <label for="new-group-hours-start">営業時間開始:</label>
-    <input type="time" id="new-group-hours-start" v-model="newGroupHoursStart">
-    <label for="new-group-hours-end">営業時間終了:</label>
-    <input type="time" id="new-group-hours-end" v-model="newGroupHoursEnd">
-    <button @click="createGroup">グループ作成</button>
+    <form @submit.prevent="createGroup"> <!-- フォームタグを追加 -->
+        <label for="new-group-name">新しいグループ名:</label>
+        <input type="text" id="new-group-name" v-model="newGroupName">
+        <label for="new-group-address">住所:</label>
+        <input type="text" id="new-group-address" v-model="newGroupAddress">
+        <label for="new-group-hours-start">営業時間開始:</label>
+        <input type="time" id="new-group-hours-start" v-model="newGroupHoursStart">
+        <label for="new-group-hours-end">営業時間終了:</label>
+        <input type="time" id="new-group-hours-end" v-model="newGroupHoursEnd">
+        <label for="group-password">パスワード:</label> <!-- パスワード入力欄を追加 -->
+        <input type="password" id="group-password" v-model="groupPassword" autocomplete="current-password"> <!-- autocomplete属性を追加 -->
+        <button type="submit">グループ作成</button> <!-- ボタンのタイプをsubmitに変更 -->
+    </form>
 </div>
 
 <br>
@@ -203,8 +207,7 @@
 
 <script type="module">
 import { validateProfile, validateGroup } from './lib/validation.js';
-import { fetchProfiles, fetchGroups, addProfile, createGroup, deleteProfile, updateProfile, updateGroup, fetchInitialize } from './lib/api.js';
-import { test } from './lib/api.js';
+import { fetchProfiles, fetchGroups, addProfile, createGroup, deleteProfile, updateProfile, updateGroup, fetchInitialize, test } from './lib/api.js';
 
 const app = Vue.createApp({
     data() {
@@ -215,15 +218,14 @@ const app = Vue.createApp({
             logged_in: false,
             login_result: '',
             current_tab: 'dev',
-
-
             newProfileName: '',
             newProfileBio: '',
             newProfileGroup: '',
             newGroupName: '',
             newGroupAddress: '',
-            newGroupHoursStart: '',
-            newGroupHoursEnd: '',
+            newGroupHoursStart: '00:00', // デフォルト値を設定
+            newGroupHoursEnd: '01:00', // デフォルト値を設定
+            groupPassword: '', // パスワードを追加
             profiles: [],
             groups: [],
             requestedProfiles: [], // リクエストされたプロフィール
@@ -316,7 +318,8 @@ const app = Vue.createApp({
                     address: this.newGroupAddress,
                     hours: newGroupHours,
                     subscribe: false,
-                    subscribe_from: []
+                    subscribe_from: [],
+                    password: this.groupPassword // パスワードを追加
                 };
                 createGroup(newGroup)
                 .then(data => {
@@ -326,6 +329,7 @@ const app = Vue.createApp({
                     this.newGroupAddress = '';
                     this.newGroupHoursStart = '';
                     this.newGroupHoursEnd = '';
+                    this.groupPassword = ''; // パスワードをクリア
                     alert('グループが正常に作成されました');
                 })
                 .catch(error => {
@@ -408,7 +412,7 @@ const app = Vue.createApp({
         updateProfile_button(){
             const profile_id = this.editProfileId;
             console.log("profile_id");
-                console.log(profile_id);
+            console.log(profile_id);
 
             if (validateProfile(this.newProfileName, this.newProfileBio, this.current_group)) {
                 console.log("profile_id");
@@ -431,6 +435,10 @@ const app = Vue.createApp({
                     //   res.json({ message: 'Profile updated' });を受け取る
                     console.log(data);
                 })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('プロフィールの更新に失敗しました');
+                });
 
             } else {
                 alert('プロフィールの入力が無効です');
