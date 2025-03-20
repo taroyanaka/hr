@@ -22,32 +22,12 @@
     <button @click="fetchInitialize">initialize</button>
     <button @click="test">test</button>
 
-
     <div class="top-button">
         <a href="./b_p.html" class="home-button">
             <span class="material-icons">home</span>
         </a>
     </div>
 </header>
-
-<!-- <div class="sidebar" :class="{ open: is_sidebar_open }" @click="toggle_sidebar">
-    <button @click.stop="toggle_sidebar" class="close-button">
-        <span class="material-icons">close</span>
-    </button>
-    <h2>Menu</h2>
-
-    <div>login
-        <h2>{{ login_result }}</h2>
-        <button v-if="!logged_in">sing_in</button>
-    </div>
-
-    <div class="menu-buttons" @click.stop>
-    </div>
-
-    <div v-if="uid && username">
-        <button @click="googleSignOut" class="signout-button">ログアウト</button>
-    </div>
-</div> -->
 
 <div class="requested-que">
     <h3>リクエストされたプロフィール</h3>
@@ -60,9 +40,8 @@
     </ul>
 </div>
 
-
 <div class="input-for-group">
-    <form @submit.prevent="createGroup"> <!-- フォームタグを追加 -->
+    <form @submit.prevent="createGroup">
         <label for="new-group-name">新しいグループ名:</label>
         <input type="text" id="new-group-name" v-model="newGroupName">
         <label for="new-group-address">住所:</label>
@@ -71,67 +50,44 @@
         <input type="time" id="new-group-hours-start" v-model="newGroupHoursStart">
         <label for="new-group-hours-end">営業時間終了:</label>
         <input type="time" id="new-group-hours-end" v-model="newGroupHoursEnd">
-        <label for="group-password">パスワード:</label> <!-- パスワード入力欄を追加 -->
-        <input type="password" id="group-password" v-model="groupPassword" autocomplete="current-password"> <!-- autocomplete属性を追加 -->
-        <button type="submit">グループ作成</button> <!-- ボタンのタイプをsubmitに変更 -->
+        <label for="group-password">パスワード:</label>
+        <input type="password" id="group-password" v-model="groupPassword" autocomplete="current-password">
+        <button type="submit">グループ作成</button>
     </form>
 </div>
 
 <br>
 
 <div class="input-for-profile">
-    <div class="input-for-profile">
-        <div>
-            <!-- profile id(updateの時だけ表示。クリアしたらnullで非表示になる) -->
-            <div v-if="editProfileId">
-                <!-- <label for="profile-id">プロフィールID:</label> -->
-                <!-- <input type="text" id="profile-id" v-model="editProfileId" readonly> -->
-                <span>id: {{ editProfileId }}</span>                
-            </div>
+    <div>
+        <div v-if="editProfileId">
+            <span>id: {{ editProfileId }}</span>                
         </div>
-
-        <div>
-            <label for="profile-name">プロフィール名:</label>
-            <input type="text" id="profile-name" v-model="newProfileName">
-        </div>
-        <div>
-            <label for="profile-bio">プロフィールの説明:</label>
-            <input type="text" id="profile-bio" v-model="newProfileBio">
-        </div>
-        <div>
-
-            <!-- editProfileIdがないときはグループ選択が出現 -->
-            <div v-if="!editProfileId">
-                <label for="profile-group">グループを選択:</label>
-                <select id="profile-group" v-model="newProfileGroup">
-                    <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
-                </select>
-            </div>
-            <!-- <label for="profile-group">グループを選択:</label>
-            <select id="profile-group" v-model="newProfileGroup">
-                <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
-            </select> -->
-
-            <!-- updateProfile -->
-<!-- const { name, bio, group_id, status } = profileData; -->
-
-<button v-else @click="updateProfile_button">更新</button>
-
-
-            <button @click="clearForm">クリア</button>
-
-        </div>
-
     </div>
+
+    <div>
+        <label for="profile-name">プロフィール名:</label>
+        <input type="text" id="profile-name" v-model="newProfileName">
+    </div>
+    <div>
+        <label for="profile-bio">プロフィールの説明:</label>
+        <input type="text" id="profile-bio" v-model="newProfileBio">
+    </div>
+    <div v-if="!editProfileId">
+        <label for="profile-group">グループを選択:</label>
+        <select id="profile-group" v-model="newProfileGroup">
+            <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
+        </select>
+    </div>
+    <button v-else @click="updateProfile_button">更新</button>
+    <button @click="clearForm">クリア</button>
 </div>
 
 <div class="each_data content">
     <div v-show="current_tab === 'dev'" class="all_data">
-        <!-- input password -->
         password: <input type="password" id="password" v-model="password" autocomplete>
 
-        <label for="group-select"
-        >カレントグループを選択:</label>
+        <label for="group-select">カレントグループを選択:</label>
         <select id="group-select" v-model="current_group">
             <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
         </select>
@@ -146,16 +102,8 @@
                             <p>営業時間: {{ group.hours }}</p>
                             <p>所属するプロフィールの数: {{ groupProfilesCount(group.id) }}</p>
                             <ul>
-                                <li v-for="profile in profiles.filter(profile => profile.group === group.id && profile.status === 'OK')" :key="profile.id">
-                                    {{ profile.name }}: {{ profile.bio }}
-                                </li>
                             </ul>
-
                             <p>
-                                <label>
-                                    <input type="checkbox" :checked="group.subscribe_from.includes(current_group)" @change="toggleSubscribe(group.id)">
-                                    サブスクライブ
-                                </label>
                             </p>
                         </div>
                     </li>
@@ -166,18 +114,11 @@
                 <ul class="profile-list">
                     <li v-for="(profile, index) in ownGroupProfiles" :key="index" class="profile-item">
                         <div class="profile-info">
-                            <!-- 編集ボタン -->
                             <button @click="editProfile(profile.id)">編集</button>
                             <h2>{{ profile.name }}</h2>
                             <p>{{ profile.bio }}</p>
                             <p>グループ: {{ profile.group }}</p>
                             <p>ステータス: 
-                                <label>
-                                    <input type="radio" v-model="profile.status" :value="'OK'"> OK
-                                </label>
-                                <label>
-                                    <input type="radio" v-model="profile.status" :value="'NG'"> NG
-                                </label>
                             </p>
                         </div>
                         <button @click="profiles_delete(profile.id)">削除</button>
@@ -193,12 +134,7 @@
                             <p>住所: {{ group.address }}</p>
                             <p>営業時間: {{ group.hours }}</p>
                             <p>所属するプロフィールの数: {{ groupProfilesCount(group.id) }}</p>
-                            <!-- group idが一致したprofile一覧を表示する -->
                             <ul>
-                                <li v-for="profile in profiles.filter(profile => profile.group === group.id && profile.status === 'OK')" :key="profile.id">
-                                    {{ profile.name }}: {{ profile.bio }}
-                                    <button @click="requestProfile(profile)">リクエスト</button>
-                                </li>
                             </ul>
                         </div>
                     </li>
@@ -211,7 +147,6 @@
 
 <script type="module">
 import { validateProfile, validateGroup } from './lib/validation.js';
-import { fetchProfiles, fetchGroups, addProfile, createGroup, deleteProfile, updateProfile, updateGroup, fetchInitialize, test } from './lib/api.js';
 
 const app = Vue.createApp({
     data() {
@@ -227,13 +162,13 @@ const app = Vue.createApp({
             newProfileGroup: '',
             newGroupName: '',
             newGroupAddress: '',
-            newGroupHoursStart: '00:00', // デフォルト値を設定
-            newGroupHoursEnd: '01:00', // デフォルト値を設定
-            groupPassword: '', // パスワードを追加
-            password: '', // パスワードを追加
+            newGroupHoursStart: '00:00',
+            newGroupHoursEnd: '01:00',
+            groupPassword: '',
+            password: '',
             profiles: [],
             groups: [],
-            requestedProfiles: [], // リクエストされたプロフィール
+            requestedProfiles: [],
             current_group: '',
             editProfileId: null,
         };
@@ -263,7 +198,6 @@ const app = Vue.createApp({
             return this.profiles.filter(profile => profile.group === groupId).length;
         },
         requestProfile(profile) {
-            // リクエストできたことをポップアップする
             alert(`${profile.name}にリクエストを送信しました`);
             this.requestedProfiles.push(profile);
         },
@@ -273,7 +207,6 @@ const app = Vue.createApp({
             this.requestedProfiles = this.requestedProfiles.filter(p => p !== request);
         },
         toggleSubscribe(group_id) {
-            console.log(group_id);
             const group = this.groups.find(group => group.id === group_id);
             group.subscribe_from = group.subscribe_from.includes(this.current_group)
                 ? group.subscribe_from.filter(id => id !== this.current_group)
@@ -281,21 +214,15 @@ const app = Vue.createApp({
             this.updateGroup(group, this.password);
         },
         addProfile() {
-            console.log('Adding profile with:', {
-                name: this.newProfileName,
-                bio: this.newProfileBio,
-                group: this.newProfileGroup
-            });
-
             if (validateProfile(this.newProfileName, this.newProfileBio, this.newProfileGroup)) {
                 const newProfile = {
                     name: this.newProfileName,
                     bio: this.newProfileBio,
                     group: this.newProfileGroup,
-                    group_id: this.newProfileGroup, // group_idを追加
-                    status: 'NG' // 初期ステータスをNGに設定
+                    group_id: this.newProfileGroup,
+                    status: 'NG'
                 };
-                addProfile(newProfile, this.password)
+                this.addProfileAPI(newProfile, this.password)
                 .then(data => {
                     newProfile.id = data.id;
                     this.profiles.push(newProfile);
@@ -324,9 +251,9 @@ const app = Vue.createApp({
                     hours: newGroupHours,
                     subscribe: false,
                     subscribe_from: [],
-                    password: this.groupPassword // パスワードを追加
+                    password: this.groupPassword
                 };
-                createGroup(newGroup, this.password)
+                this.createGroupAPI(newGroup, this.password)
                 .then(data => {
                     newGroup.id = data.id;
                     this.groups.push(newGroup);
@@ -334,7 +261,7 @@ const app = Vue.createApp({
                     this.newGroupAddress = '';
                     this.newGroupHoursStart = '';
                     this.newGroupHoursEnd = '';
-                    this.groupPassword = ''; // パスワードをクリア
+                    this.groupPassword = '';
                     alert('グループが正常に作成されました');
                 })
                 .catch(error => {
@@ -346,19 +273,10 @@ const app = Vue.createApp({
             }
         },
         profiles_delete(profile_id) {
-            deleteProfile(profile_id, this.password)
-            .then(data => {
-                this.profiles = this.profiles.filter(profile => profile.id !== profile_id);
-                alert('プロフィールが正常に削除されました');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert('プロフィールの削除に失敗しました');
-            });
+            this.deleteProfileAPI(profile_id, this.current_group, this.password);
         },
-
         fetchProfiles() {
-            fetchProfiles()
+            this.fetchProfilesAPI()
                 .then(data => {
                     this.profiles = data;
                 })
@@ -367,7 +285,7 @@ const app = Vue.createApp({
                 });
         },
         fetchGroups() {
-            fetchGroups()
+            this.fetchGroupsAPI()
                 .then(data => {
                     this.groups = data;
                 })
@@ -376,7 +294,7 @@ const app = Vue.createApp({
                 });
         },
         updateGroup(group) {
-            updateGroup(group, this.password)
+            this.updateGroupAPI(group, this.password)
             .then(data => {
                 alert('グループが正常に更新されました');
             })
@@ -386,7 +304,7 @@ const app = Vue.createApp({
             });
         },
         fetchInitialize() {
-            fetchInitialize()
+            this.fetchInitializeAPI()
                 .then(data => {
                     this.fetchProfiles();
                     this.fetchGroups();
@@ -412,16 +330,11 @@ const app = Vue.createApp({
             this.editProfileId = profile_id;
         },
         test(){
-            test();
+            this.testAPI();
         },
         updateProfile_button(){
             const profile_id = this.editProfileId;
-            console.log("profile_id");
-            console.log(profile_id);
-
             if (validateProfile(this.newProfileName, this.newProfileBio, this.current_group)) {
-                console.log("profile_id");
-                console.log(profile_id);
                 const profile = this.profiles.find(profile => profile.id === profile_id);
                 if (!profile) {
                     alert('プロフィールが見つかりません');
@@ -429,27 +342,166 @@ const app = Vue.createApp({
                 }
                 profile.name = this.newProfileName;
                 profile.bio = this.newProfileBio;
-                profile.group_id = this.current_group; // 必要なパラメータを追加
-                profile.status = 'NG'; // 必要なパラメータを追加
-                console.log("profile");
-                console.log(profile);
-                updateProfile(profile_id, profile, this.password)
-                //   res.json({ message: 'Profile updated' });を受け取る
+                profile.group_id = this.current_group;
+                profile.status = 'NG';
+                this.updateProfileAPI(profile_id, profile, this.password)
                 .then(data => {
                     this.clearForm();
-                    //   res.json({ message: 'Profile updated' });を受け取る
                     console.log(data);
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     alert('プロフィールの更新に失敗しました');
                 });
-
             } else {
                 alert('プロフィールの入力が無効です');
             }
         },
 
+        async fetchProfilesAPI() {
+            console.log('fetchProfilesAPI');
+            try {
+                const response = await fetch('http://localhost:3000/profiles');
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async fetchGroupsAPI() {
+            console.log('fetchGroupsAPI');
+            try {
+                const response = await fetch('http://localhost:3000/groups');
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async addProfileAPI(newProfile, password) {
+            console.log('addProfileAPI');
+            try {
+                const response = await fetch('http://localhost:3000/profiles', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ...newProfile, password })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async createGroupAPI(newGroup, password) {
+            try {
+                const response = await fetch('http://localhost:3000/groups', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ...newGroup, password })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async deleteProfileAPI(profile_id, group_id, password) {
+            try {
+                const response = await fetch(`http://localhost:3000/profiles/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        profile_id: profile_id,
+                        group_id: group_id,
+                        password: password
+                    })
+                });
+                //   if (error) {return res.status(403).json({ message: error }) }; ならエラーへ
+                // 403ならcatchエラー
+                if (response.status !== 'OK') {
+                    console.error('Error:', response);
+                    throw new Error('Forbidden: Invalid credentials');
+                }
+                
+
+
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async updateGroupAPI(group, password) {
+            try {
+                const response = await fetch(`http://localhost:3000/groups/${group.id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ ...group, password })
+                });
+                if (response.status !== 'OK') {console.error('Error:', response);throw new Error('Forbidden: Invalid credentials')}
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async updateProfileAPI(profile_id, profile, password) {
+            profile.id = profile_id;
+            try {
+                const response = await fetch('http://localhost:3000/profiles_update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        profile: profile,
+                        password: password
+                    })
+                });
+                if (response.status !== 'OK') {console.error('Error:', response);throw new Error('Forbidden: Invalid credentials')}
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async fetchInitializeAPI() {
+            try {
+                const response = await fetch('http://localhost:3000/initialize');
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async testAPI() {
+            try {
+                const response = await fetch('http://localhost:3000/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        }
     },
     mounted() {
         this.fetchProfiles();
@@ -457,16 +509,15 @@ const app = Vue.createApp({
     },
     watch: {
         current_group() {
-            // フォームをクリアする
             this.clearForm();
-            // サブスクライブの状態を更新する
             this.groups.forEach(group => {
                 group.subscribe = group.subscribe_from.includes(this.current_group);
             });
         }
-    },
-    
-}).mount('#app');
+    }
+});
+
+app.mount('#app');
 </script>
 </body>
 </html>
