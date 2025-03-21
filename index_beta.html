@@ -69,7 +69,13 @@
         <label for="profile-bio">プロフィールの説明:</label>
         <input type="text" id="profile-bio" v-model="newProfileBio">
     </div>
-    <button v-else @click="updateProfile_button">更新</button>
+    <label for="group-select">カレントグループを選択:</label>
+    <select id="group-select" v-model="current_group">
+        <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
+    </select>
+    <br>
+    password: <input type="password" id="password" v-model="password" autocomplete>
+    <button @click="addProfile">プロフィール追加</button>
     <button @click="clearForm">クリア</button>
 </div>
 
@@ -226,6 +232,8 @@ const app = Vue.createApp({
             this.updateGroup(group, this.password);
         },
         addProfile() {
+            // current_groupから this.newProfileGroup, this.newProfileGroupを取得
+            this.newProfileGroup = this.current_group;
             if (validateProfile(this.newProfileName, this.newProfileBio, this.newProfileGroup)) {
                 const newProfile = {
                     name: this.newProfileName,
@@ -234,6 +242,7 @@ const app = Vue.createApp({
                     group_id: this.newProfileGroup,
                     status: 'NG'
                 };
+                console.log(newProfile);
                 this.addProfileAPI(newProfile, this.password)
                 .then(data => {
                     newProfile.id = data.id;
