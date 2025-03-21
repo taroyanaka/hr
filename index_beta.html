@@ -9,6 +9,7 @@
 <script src="./lib/firebasejs_8.6.1_firebase-app.js"></script>
 <script src="./lib/firebasejs_8.4.0_firebase-auth.js"></script>
 <script src="./lib/vue@3.5.13.global.prod.js"></script>
+<script src="./lib/validation.js"></script>
 <script type="module" src="./lib/validation.js"></script>
 <link rel="stylesheet" href="./lib/reset.css">
 <link rel="stylesheet" href="./lib/index.css">
@@ -59,11 +60,6 @@
 <br>
 
 <div class="input-for-profile">
-    <div>
-        <div v-if="editProfileId">
-            <span>id: {{ editProfileId }}</span>                
-        </div>
-    </div>
 
     <div>
         <label for="profile-name">プロフィール名:</label>
@@ -72,12 +68,6 @@
     <div>
         <label for="profile-bio">プロフィールの説明:</label>
         <input type="text" id="profile-bio" v-model="newProfileBio">
-    </div>
-    <div v-if="!editProfileId">
-        <label for="profile-group">グループを選択:</label>
-        <select id="profile-group" v-model="newProfileGroup">
-            <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
-        </select>
     </div>
     <button v-else @click="updateProfile_button">更新</button>
     <button @click="clearForm">クリア</button>
@@ -100,25 +90,46 @@
                             <h2>{{ group.name }}</h2>
                             <p>住所: {{ group.address }}</p>
                             <p>営業時間: {{ group.hours }}</p>
-                            <p>所属するプロフィールの数: {{ groupProfilesCount(group.id) }}</p>
+                            <!-- そのグループに所属するprofile -->
                             <ul>
+                                <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
+                                    {{ profile.name }}: {{ profile.bio }}
+                                </li>
                             </ul>
+
                             <p>
+                                <label>
+                                    <input type="checkbox" :checked="group.subscribe_from.includes(current_group)" @change="toggleSubscribe(group.id)">
+                                    サブスクライブ
+                                </label>
                             </p>
+
+
                         </div>
                     </li>
                 </ul>
             </div>
             <div class="profile-column">
                 <h3>自分のグループ</h3>
+                <!-- カレントグループを表示 -->
+                 <div v-if="current_group">
+                <h4>{{ groups.find(group => group.id === current_group).name }}</h4>
+                <p>住所: {{ groups.find(group => group.id === current_group).address }}</p>
+                <p>営業時間: {{ groups.find(group => group.id === current_group).hours }}</p>
+                </div>
                 <ul class="profile-list">
                     <li v-for="(profile, index) in ownGroupProfiles" :key="index" class="profile-item">
                         <div class="profile-info">
-                            <button @click="editProfile(profile.id)">編集</button>
                             <h2>{{ profile.name }}</h2>
                             <p>{{ profile.bio }}</p>
                             <p>グループ: {{ profile.group }}</p>
                             <p>ステータス: 
+                                <label>
+                                    <input type="radio" v-model="profile.status" :value="'OK'"> OK
+                                </label>
+                                <label>
+                                    <input type="radio" v-model="profile.status" :value="'NG'"> NG
+                                </label>
                             </p>
                         </div>
                         <button @click="profiles_delete(profile.id)">削除</button>
@@ -133,21 +144,26 @@
                             <h2>{{ group.name }}</h2>
                             <p>住所: {{ group.address }}</p>
                             <p>営業時間: {{ group.hours }}</p>
-                            <p>所属するプロフィールの数: {{ groupProfilesCount(group.id) }}</p>
                             <ul>
+                                <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
+                                    {{ profile.name }}: {{ profile.bio }}
+                                    <!-- requestProfile -->
+                                    <button @click="requestProfile(profile)">リクエスト</button>
+                                </li>
                             </ul>
+
+
                         </div>
                     </li>
                 </ul>
             </div>
         </div>
     </div>
+
 </div>
 </div>
 
-<script type="module">
-import { validateProfile, validateGroup } from './lib/validation.js';
-
+<script>
 const app = Vue.createApp({
     data() {
         return {
@@ -170,7 +186,6 @@ const app = Vue.createApp({
             groups: [],
             requestedProfiles: [],
             current_group: '',
-            editProfileId: null,
         };
     },
     computed: {
@@ -193,9 +208,6 @@ const app = Vue.createApp({
     methods: {
         toggle_sidebar() {
             this.is_sidebar_open = !this.is_sidebar_open;
-        },
-        groupProfilesCount(groupId) {
-            return this.profiles.filter(profile => profile.group === groupId).length;
         },
         requestProfile(profile) {
             alert(`${profile.name}にリクエストを送信しました`);
@@ -320,44 +332,10 @@ const app = Vue.createApp({
             this.newProfileName = '';
             this.newProfileBio = '';
             this.newProfileGroup = '';
-            this.editProfileId = null;
-        },
-        editProfile(profile_id) {
-            const profile = this.profiles.find(profile => profile.id === profile_id);
-            this.newProfileName = profile.name;
-            this.newProfileBio = profile.bio;
-            this.newProfileGroup = profile.group;
-            this.editProfileId = profile_id;
-        },
+            },
         test(){
             this.testAPI();
         },
-        updateProfile_button(){
-            const profile_id = this.editProfileId;
-            if (validateProfile(this.newProfileName, this.newProfileBio, this.current_group)) {
-                const profile = this.profiles.find(profile => profile.id === profile_id);
-                if (!profile) {
-                    alert('プロフィールが見つかりません');
-                    return;
-                }
-                profile.name = this.newProfileName;
-                profile.bio = this.newProfileBio;
-                profile.group_id = this.current_group;
-                profile.status = 'NG';
-                this.updateProfileAPI(profile_id, profile, this.password)
-                .then(data => {
-                    this.clearForm();
-                    console.log(data);
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('プロフィールの更新に失敗しました');
-                });
-            } else {
-                alert('プロフィールの入力が無効です');
-            }
-        },
-
         async fetchProfilesAPI() {
             console.log('fetchProfilesAPI');
             try {
@@ -459,26 +437,6 @@ const app = Vue.createApp({
                 throw error;
             }
         },
-        async updateProfileAPI(profile_id, profile, password) {
-            profile.id = profile_id;
-            try {
-                const response = await fetch('http://localhost:3000/profiles_update', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        profile: profile,
-                        password: password
-                    })
-                });
-                if (response.status !== 'OK') {console.error('Error:', response);throw new Error('Forbidden: Invalid credentials')}
-                return await response.json();
-            } catch (error) {
-                console.error('Error:', error);
-                throw error;
-            }
-        },
         async fetchInitializeAPI() {
             try {
                 const response = await fetch('http://localhost:3000/initialize');
@@ -515,9 +473,7 @@ const app = Vue.createApp({
             });
         }
     }
-});
-
-app.mount('#app');
+}).mount('#app');
 </script>
 </body>
 </html>
