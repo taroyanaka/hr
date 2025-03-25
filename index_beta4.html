@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<!-- 必要な変更点 -->
+サブスクライブの機能を削除する
+提案していく中で要望が多ければ実装する
+(最適化早すぎ問題。顧客のニーズと俺の頭の中のギャップを作らないようにする)
+
+グループにemailのカラムを追加。当然cryptoする。
+リクエストを送信に紐付けて実装。
+サーバーのコードを本番環境に乗せる。
+dbファイルを.dataディレクトリに置いて外部に見えないことを確認の上実装。
+
+  詳細を詳細に名称変更(詳細に店舗として必要な情報を載せていく)
+    店舗に見せに行く(ついでに酒を飲んで遊んでくる)
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>insert link</title>
+<!-- <script src="./lib/profiles_data.js"></script> -->
+<script src="./lib/firebasejs_8.6.1_firebase-app.js"></script>
+<script src="./lib/firebasejs_8.4.0_firebase-auth.js"></script>
+<script src="./lib/vue@3.5.13.global.prod.js"></script>
+<script src="./lib/validation.js"></script>
+<script type="module" src="./lib/validation.js"></script>
+<link rel="stylesheet" href="./lib/reset.css">
+<link rel="stylesheet" href="./lib/index.css">
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+</head>
+<body>
+<div id="app">
+<header class="header">
+    <!-- toのemailアドレス input -->
+    送信先emailアドレス<input type="email" name="" id="" v-model="to_email">
+    {{ to_email }}
+    請求金額: <input type="number" name="" id="" v-model="price">
+    {{ price }}
+
+    <button @click="fetch_sendemail">fetch_sendemail</button>
+    <button @click="fetchInitialize">initialize</button>
+    <button @click="test">test</button>
+
+    <div class="top-button">
+        <a href="./b_p.html" class="home-button">
+            <span class="material-icons">home</span>
+        </a>
+    </div>
+</header>
+
+<div class="requested-que">
+    <h3>リクエストされたプロフィール</h3>
+    <ul>
+        <li v-for="request in filteredRequestedProfiles" :key="request.id">
+            {{ request.name }} ({{ request.group }})
+            <button @click="respondToRequest(request, 'accept')">許可</button>
+            <button @click="respondToRequest(request, 'reject')">拒否</button>
+        </li>
+    </ul>
+</div>
+
+<div class="input-for-group">
+    <form @submit.prevent="createGroup">
+        <label for="new-group-name">新しいグループ名:</label>
+        <input type="text" id="new-group-name" v-model="newGroupName">
+        <label for="new-group-detail">詳細:</label>
+        <input type="text" id="new-group-detail" v-model="newGroupdetail">
+        <label for="new-group-email">Eメール:</label>
+        <input type="email" id="new-group-email" v-model="newGroupEmail">
+
+        <label for="group-password">adminパスワード:</label>
+        <input type="password" id="group-password" v-model="groupPassword" autocomplete="current-password">
+        <button type="submit">グループ作成</button>
+    </form>
+</div>
+
+<br>
+
+
+<div class="id_pass">
+    グループのidとpasswordを入力してください
+    <br>
+                    <!-- <label for="group-select">カレントグループを選択:</label>
+        <select id="group-select" v-model="current_group">
+            <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
+        </select> -->
+            <!-- input:numberに変更 -->
+            id:
+            <input type="number" id="current_group" v-model="current_group">
+            <!-- current_groupを入力するボタン 1,2,3それぞれ -->
+               <button @click="current_group = 1">1</button>
+               <button @click="current_group = 2">2</button>
+               <button @click="current_group = 3">3</button>
+       
+               password: <input type="password" id="password" v-model="password" autocomplete>
+</div>
+<br>
+
+<div class="input-for-profile">
+
+    <div>
+        <label for="profile-name">プロフィール名:</label>
+        <input type="text" id="profile-name" v-model="newProfileName">
+    </div>
+    <div>
+        <label for="profile-bio">プロフィールの説明:</label>
+        <input type="text" id="profile-bio" v-model="newProfileBio">
+    </div>
+    <button @click="addProfile">プロフィール追加</button>
+    <button @click="clearForm">クリア</button>
+</div>
+
+<div class="each_data content">
+    <div v-show="current_tab === 'dev'" class="all_data">
+
+        <div class="profile-columns">
+            <div class="profile-column">
+                <h3>他のグループ</h3>
+                <ul class="profile-list">
+                    <li v-for="group in otherGroups" :key="group.id" class="profile-item">
+                        <div class="profile-info">
+                            <h2>{{ group.name }}</h2>
+                            <p>詳細: {{ group.detail }}</p>
+                            <!-- <p>Eメール: {{ group.email }}</p> -->
+                                <div>
+                                  <button @click="toggle">
+                                    {{ isOpen ? '閉じる' : 'プロフィール一覧' }}
+                                  </button>
+                              
+                                  <div v-if="isOpen">
+                                    <ul>
+                                        <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
+                                            {{ profile.name }}: {{ profile.bio }}
+                                        </li>
+                                    </ul>        
+                                  </div>
+                                </div>
+
+                              
+
+                            <p>
+                                <label>
+                                    <input type="checkbox" :checked="group.subscribe_from.includes(current_group)" @change="toggleSubscribe(group.id)">
+                                    サブスクライブ
+                                </label>
+                            </p>
+
+
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="profile-column">
+                <h3>自分のグループ</h3>
+                <!-- カレントグループを表示 -->
+                 <div v-if="current_group">
+                <h4>{{ groups.find(group => group.id === current_group).name }}</h4>
+                <p>詳細: {{ groups.find(group => group.id === current_group).detail }}</p>
+                <p>Eメール {{ groups.find(group => group.id === current_group).email }}</p>
+                <!-- <p>営業時間: {{ groups.find(group => group.id === current_group).hours }}</p> -->
+                </div>
+                <ul class="profile-list">
+                    <li v-for="(profile, index) in ownGroupProfiles" :key="index" class="profile-item">
+                        <div class="profile-info">
+                            <h2>{{ profile.name }}</h2>
+                            <p>{{ profile.bio }}</p>
+                            <p>グループ: {{ profile.group }}</p>
+                            <p>ステータス: 
+                                <label>
+                                    <input type="radio" v-model="profile.status" :value="'OK'"> OK
+                                </label>
+                                <label>
+                                    <input type="radio" v-model="profile.status" :value="'NG'"> NG
+                                </label>
+                            </p>
+                        </div>
+                        <button @click="profiles_delete(profile.id)">削除</button>
+                    </li>
+                </ul>
+            </div>
+            <div class="profile-column">
+                <h3>サブスクライブしたグループ</h3>
+                <ul class="profile-list">
+                    <li v-for="group in subscribedGroups" :key="group.id" class="profile-item">
+                        <div class="profile-info">
+                            <h2>{{ group.name }}</h2>
+                            <p>詳細: {{ group.detail }}</p>
+                            <!-- <p>Eメール: {{ group.email }}</p> -->
+                            <ul>
+                                <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
+                                    {{ profile.name }}: {{ profile.bio }}
+                                    <!-- requestProfile -->
+                                    <button @click="requestProfile(profile)">リクエスト</button>
+                                </li>
+                            </ul>
+
+
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+</div>
+</div>
+
+<script>
+const app = Vue.createApp({
+    data() {
+        return {
+            endpoint_url: 'http://localhost:3000/',
+            to_email: '@gmail.com',
+            price: 1000,
+            is_sidebar_open: false,
+            username: '',
+            uid: null,
+            logged_in: false,
+            login_result: '',
+            current_tab: 'dev',
+            newProfileName: '',
+            newProfileBio: '',
+            newGroupName: '',
+            newGroupdetail: '',
+            newGroupEmail: 'touroku_meado@gmail.com',
+            groupPassword: '',
+            password: '',
+            profiles: [],
+            groups: [],
+            requestedProfiles: [],
+            current_group: '',
+            isOpen: false,
+        };
+    },
+    computed: {
+        filteredProfiles() {
+            return this.profiles.filter(profile => profile.group !== this.current_group);
+        },
+        ownGroupProfiles() {
+            return this.profiles.filter(profile => profile.group_id === this.current_group);
+        },
+        subscribedGroups() {
+            return this.groups.filter(group => group.subscribe_from.includes(this.current_group));
+        },
+        otherGroups() {
+            return this.groups.filter(group => group.id !== this.current_group);
+        },
+        filteredRequestedProfiles() {
+            return this.requestedProfiles.filter(profile => profile.group === this.current_group);
+        }
+    },
+    methods: {
+        toggle_sidebar() {
+            this.is_sidebar_open = !this.is_sidebar_open;
+        },
+        requestProfile(profile) {
+            alert(`${profile.name}にリクエストを送信しました`);
+            this.requestedProfiles.push(profile);
+        },
+        respondToRequest(request, response) {
+            const message = response === 'accept' ? '許可のテンプレートメッセージ' : '拒否のテンプレートメッセージ';
+            alert(`${request.group}と${request.name}に${message}を送信しました`);
+            this.requestedProfiles = this.requestedProfiles.filter(p => p !== request);
+        },
+        // toggleSubscribe(group_id) {
+        //     const group = this.groups.find(group => group.id === group_id);
+        //     group.subscribe_from = group.subscribe_from.includes(this.current_group)
+        //         ? group.subscribe_from.filter(id => id !== this.current_group)
+        //         : [...group.subscribe_from, this.current_group];
+        //     this.toggle
+        // },
+        async addProfile() {
+        try {
+            const newProfile = {
+                name: this.newProfileName,
+                bio: this.newProfileBio,
+                group_id: this.current_group,
+                status: 'NG'
+            };
+
+            console.log(newProfile);
+            console.log("newProfile1");
+            if (validateProfile(this.newProfileName, this.newProfileBio, this.current_group) === false) {
+                console.log("newProfile2");
+                alert('プロフィールの入力が無効です');
+                return;
+            }
+            console.log("newProfile3");
+            const data = await this.addProfileAPI(newProfile, this.password);
+            console.log("newProfile4");
+            await this.fetchProfiles();
+            await this.fetchGroups();
+            console.log("newProfile5");
+            this.newProfileName = '';
+            this.newProfileBio = '';
+            console.log("newProfile6");
+            alert('プロフィールが正常に追加されました');
+        } catch (error) {
+            console.error('Error:', error);
+            alert('プロフィールの追加に失敗しました');
+        }
+        },
+        async createGroup() {
+            const existingGroups = this.groups.map(group => group.name);
+            // const newGroupHours = `${this.newGroupHoursStart} - ${this.newGroupHoursEnd}`;
+            const validationResult = validateGroup(this.newGroupName, existingGroups);            
+            if (validationResult === false) {
+                alert('グループの入力が無効です: ' + validationResult.join(', '));
+                return;
+            }
+            try {
+            const newGroup = {
+                name: this.newGroupName,
+                detail: this.newGroupdetail,
+                email: this.newGroupEmail,
+                subscribe: false,
+                subscribe_from: [],
+                password: this.groupPassword
+            };
+            console.log(this.password);
+            console.log(this.groupPassword);
+                // const data = await this.createGroupAPI(newGroup, this.password);
+                const data = await this.createGroupAPI(newGroup);
+                await this.fetchProfiles();
+                await this.fetchGroups();
+
+                this.newGroupName = '';
+                this.newGroupdetail = '';
+                this.newGroupEmail = '';
+                this.groupPassword = '';
+                alert('グループが正常に作成されました');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('グループの作成に失敗しました');
+            }
+        },
+        profiles_delete(profile_id) {
+            this.deleteProfileAPI(profile_id, this.current_group, this.password);
+        },
+        async fetchProfiles() {
+        try {
+            const data = await this.fetchProfilesAPI();
+            this.profiles = data;
+        } catch (error) {
+            console.error('Error:', error);
+        }
+        },
+        async fetchGroups() {
+        try {
+            const data = await this.fetchGroupsAPI();
+            this.groups = data;
+        } catch (error) {
+            console.error('Error:', error);
+        }
+        },
+        async updateGroup(group) {
+        try {
+            await this.updateGroupAPI(group, this.password);
+            alert('グループが正常に更新されました');
+        } catch (error) {
+            console.error('Error:', error);
+            alert('グループの更新に失敗しました');
+        }
+        },
+        async fetchInitialize() {
+        try {
+            await this.fetchInitializeAPI();
+            await this.fetchProfiles();
+            await this.fetchGroups();
+            this.requestedProfiles = [];
+            alert('初期化が完了しました');
+        } catch (error) {
+            console.error('Error:', error);
+            alert('初期化に失敗しました');
+        }
+        },
+        clearForm() {
+            this.newProfileName = '';
+            this.newProfileBio = '';
+            },
+        test(){
+            this.testAPI();
+        },
+        async fetchProfilesAPI() {
+        try {
+            console.log('fetchProfilesAPI');
+            const response = await fetch('http://localhost:3000/profiles');
+            return await response.json();
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
+        }
+        },
+        async fetchGroupsAPI() {
+        console.log('fetchGroupsAPI');
+        try {
+            const response = await fetch('http://localhost:3000/groups');
+            return await response.json();
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
+        }
+        },
+        async addProfileAPI(newProfile, password) {
+        try {
+            console.log('addProfileAPI');
+            const response = await this.fetch_post('profiles', { ...newProfile, password });
+            if (!response.ok) {throw new Error(`HTTP error! status: ${response.status}`);};
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
+        }
+        },
+        async createGroupAPI(newGroup) {
+            try {
+                const response = await this.fetch_post('groups', { ...newGroup });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async deleteProfileAPI(profile_id, group_id, password) {
+            try {
+                const response = await this.fetch_post('profiles/delete', { 
+                    profile_id: profile_id,
+                    group_id: group_id,
+                    password: password
+                });
+                if (response.status !== 'OK') {console.error('Error:', response);throw new Error('Forbidden: Invalid credentials')};
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async updateGroupAPI(group, password) {
+            try {
+                const group_id = group.id;
+                console.log(group_id);
+                const response = await this.fetch_post('groups/'+group.id, { ...group, group_id, password });
+                if (response.status !== 'OK') {console.error('Error:', response);throw new Error('Forbidden: Invalid credentials')}
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async fetchInitializeAPI() {
+            try {
+                const response = await fetch('http://localhost:3000/initialize');
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async testAPI() {
+            try {
+                const response = await this.fetch_post('test');
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        toggle() {
+            this.isOpen = !this.isOpen
+        },
+        async fetch_post(Endpoint='profiles', Body_json_str_obj={ ...newProfile, password }) {
+            return await fetch(this.endpoint_url + Endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(Body_json_str_obj)
+            });
+        },
+        // sendemailをPOSTでfetchする関数。req.body.toに送信先のメールアドレスの文字列を送る
+        async fetch_sendemail() {
+            try {
+                const response = await this.fetch_post('sendemail', { 
+                    to: this.to_email,
+                    price: this.price,
+                 });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+            
+
+        async toggleSubscribe(Target_group_id) {
+            // const group = this.groups.find(group => group.id === Target_group_id);
+            // group.subscribe_from = group.subscribe_from.includes(this.current_group)
+            //     ? group.subscribe_from.filter(id => id !== this.current_group)
+            //     : [...group.subscribe_from, this.current_group];
+            // 以下のエンドポイントをfetchする
+            // toggle_subscribe
+// app.post('/groups/toggle_subscribe', (req, res) => {
+//   // サブスクライドされる対象のgroupのid
+//   const { group_id } = req.body;
+//   // サブスクライドするgroupのid
+//   const { subscribe_group_id } = req.body;
+//   console.log(group_id, subscribe_group_id);
+//   // サブスクライドするgroupの情報を取得
+//   const subscribe_group = db.prepare('SELECT * FROM groups WHERE id = ?').get(subscribe_group_id);
+//   console.log(subscribe_group);
+//   // サブスクライドするgroupの情報を取得
+//   const group = db.prepare('SELECT * FROM groups WHERE id = ?').get(group_id);
+//   // サブスクライドするgroupのpasswordチェック
+//   const error = check_group_password(subscribe_group_id, req.body.password) ? null : 'Invalid password';
+//   if (error) {return res.status(403).json({ message: error }) };
+//   // サブスクライドされるgroupの情報を更新
+//   const new_subscribe_from = JSON.parse(subscribe_group.subscribe_from);
+//   new_subscribe_from.push(group_id);
+//   db.prepare('UPDATE groups SET subscribe_from = ? WHERE id = ?').run(JSON.stringify(new_subscribe_from), subscribe_group_id);
+//   // サブスクライドするgroupの情報を更新
+//   const new_subscribe = group.subscribe ? 0 : 1;
+//   db.prepare('UPDATE groups SET subscribe = ? WHERE id = ?').run(new_subscribe, group_id);
+//   res.json({ message: 'Group updated' });
+// });
+console.log("toggle_subscribe1");
+console.log(Target_group_id);
+            const response = await fetch('http://localhost:3000/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    group_id: Target_group_id,
+                    subscribe_group_id: this.current_group,
+                    password: this.password
+                })
+            });
+            // レスポンスが  res.json({ message: 'Group updated' }); ではない場合はチェックボックスを外す
+            if (response.message !== 'Group updated') {
+                group.subscribe_from = group.subscribe_from.filter(id => id !== this.current_group);
+            }
+
+
+        },
+    },
+    mounted() {
+        this.fetchProfiles();
+        this.fetchGroups();
+    },
+    watch: {
+        current_group() {
+            this.clearForm();
+            this.groups.forEach(group => {
+                group.subscribe = group.subscribe_from.includes(this.current_group);
+            });
+        }
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
