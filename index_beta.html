@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <!-- 必要な変更点 -->
+toggleSubscribeのバグを修正する。サブスクする/されるグループのidを整理する。
+
 グループにemailのカラムを追加。当然cryptoする。
 リクエストを送信に紐付けて実装。
 サーバーのコードを本番環境に乗せる。
 dbファイルを.dataディレクトリに置いて外部に見えないことを確認の上実装。
 
-  住所を詳細に名称変更(詳細に店舗として必要な情報を載せていく)
+  詳細を詳細に名称変更(詳細に店舗として必要な情報を載せていく)
     店舗に見せに行く(ついでに酒を飲んで遊んでくる)
 
 <html lang="en">
@@ -14,7 +16,7 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>insert link</title>
-<script src="./lib/profiles_data.js"></script>
+<!-- <script src="./lib/profiles_data.js"></script> -->
 <script src="./lib/firebasejs_8.6.1_firebase-app.js"></script>
 <script src="./lib/firebasejs_8.4.0_firebase-auth.js"></script>
 <script src="./lib/vue@3.5.13.global.prod.js"></script>
@@ -29,8 +31,8 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
 <div id="app">
 <header class="header">
     <!-- toのemailアドレス input -->
-    送信先emailアドレス<input type="email" name="" id="" v-model="toemailaddress">
-    {{ toemailaddress }}
+    送信先emailアドレス<input type="email" name="" id="" v-model="to_email">
+    {{ to_email }}
     請求金額: <input type="number" name="" id="" v-model="price">
     {{ price }}
 
@@ -60,8 +62,11 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
     <form @submit.prevent="createGroup">
         <label for="new-group-name">新しいグループ名:</label>
         <input type="text" id="new-group-name" v-model="newGroupName">
-        <label for="new-group-address">住所:</label>
-        <input type="text" id="new-group-address" v-model="newGroupAddress">
+        <label for="new-group-detail">詳細:</label>
+        <input type="text" id="new-group-detail" v-model="newGroupdetail">
+        <label for="new-group-email">Eメール:</label>
+        <input type="email" id="new-group-email" v-model="newGroupEmail">
+
         <label for="group-password">adminパスワード:</label>
         <input type="password" id="group-password" v-model="groupPassword" autocomplete="current-password">
         <button type="submit">グループ作成</button>
@@ -114,11 +119,8 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
                     <li v-for="group in otherGroups" :key="group.id" class="profile-item">
                         <div class="profile-info">
                             <h2>{{ group.name }}</h2>
-                            <p>住所: {{ group.address }}</p>
-                            <!-- <p>営業時間: {{ group.hours }}</p> -->
-
-
-
+                            <p>詳細: {{ group.detail }}</p>
+                            <!-- <p>Eメール: {{ group.email }}</p> -->
                                 <div>
                                   <button @click="toggle">
                                     {{ isOpen ? '閉じる' : 'プロフィール一覧' }}
@@ -152,7 +154,8 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
                 <!-- カレントグループを表示 -->
                  <div v-if="current_group">
                 <h4>{{ groups.find(group => group.id === current_group).name }}</h4>
-                <p>住所: {{ groups.find(group => group.id === current_group).address }}</p>
+                <p>詳細: {{ groups.find(group => group.id === current_group).detail }}</p>
+                <p>Eメール {{ groups.find(group => group.id === current_group).email }}</p>
                 <!-- <p>営業時間: {{ groups.find(group => group.id === current_group).hours }}</p> -->
                 </div>
                 <ul class="profile-list">
@@ -180,8 +183,8 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
                     <li v-for="group in subscribedGroups" :key="group.id" class="profile-item">
                         <div class="profile-info">
                             <h2>{{ group.name }}</h2>
-                            <p>住所: {{ group.address }}</p>
-                            <!-- <p>営業時間: {{ group.hours }}</p> -->
+                            <p>詳細: {{ group.detail }}</p>
+                            <!-- <p>Eメール: {{ group.email }}</p> -->
                             <ul>
                                 <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
                                     {{ profile.name }}: {{ profile.bio }}
@@ -206,7 +209,7 @@ const app = Vue.createApp({
     data() {
         return {
             endpoint_url: 'http://localhost:3000/',
-            toemailaddress: '@gmail.com',
+            to_email: '@gmail.com',
             price: 1000,
             is_sidebar_open: false,
             username: '',
@@ -217,9 +220,8 @@ const app = Vue.createApp({
             newProfileName: '',
             newProfileBio: '',
             newGroupName: '',
-            newGroupAddress: '',
-            // newGroupHoursStart: '00:00',
-            // newGroupHoursEnd: '01:00',
+            newGroupdetail: '',
+            newGroupEmail: 'touroku_meado@gmail.com',
             groupPassword: '',
             password: '',
             profiles: [],
@@ -259,13 +261,13 @@ const app = Vue.createApp({
             alert(`${request.group}と${request.name}に${message}を送信しました`);
             this.requestedProfiles = this.requestedProfiles.filter(p => p !== request);
         },
-        toggleSubscribe(group_id) {
-            const group = this.groups.find(group => group.id === group_id);
-            group.subscribe_from = group.subscribe_from.includes(this.current_group)
-                ? group.subscribe_from.filter(id => id !== this.current_group)
-                : [...group.subscribe_from, this.current_group];
-            this.updateGroup(group, this.password);
-        },
+        // toggleSubscribe(group_id) {
+        //     const group = this.groups.find(group => group.id === group_id);
+        //     group.subscribe_from = group.subscribe_from.includes(this.current_group)
+        //         ? group.subscribe_from.filter(id => id !== this.current_group)
+        //         : [...group.subscribe_from, this.current_group];
+        //     this.toggle
+        // },
         async addProfile() {
         try {
             const newProfile = {
@@ -308,8 +310,8 @@ const app = Vue.createApp({
             try {
             const newGroup = {
                 name: this.newGroupName,
-                address: this.newGroupAddress,
-                // hours: newGroupHours,
+                detail: this.newGroupdetail,
+                email: this.newGroupEmail,
                 subscribe: false,
                 subscribe_from: [],
                 password: this.groupPassword
@@ -322,9 +324,8 @@ const app = Vue.createApp({
                 await this.fetchGroups();
 
                 this.newGroupName = '';
-                this.newGroupAddress = '';
-                // this.newGroupHoursStart = '';
-                // this.newGroupHoursEnd = '';
+                this.newGroupdetail = '';
+                this.newGroupEmail = '';
                 this.groupPassword = '';
                 alert('グループが正常に作成されました');
             } catch (error) {
@@ -436,7 +437,9 @@ const app = Vue.createApp({
         },
         async updateGroupAPI(group, password) {
             try {
-                const response = await this.fetch_post('groups/'+group.id, { ...group, password });
+                const group_id = group.id;
+                console.log(group_id);
+                const response = await this.fetch_post('groups/'+group.id, { ...group, group_id, password });
                 if (response.status !== 'OK') {console.error('Error:', response);throw new Error('Forbidden: Invalid credentials')}
                 return await response.json();
             } catch (error) {
@@ -478,7 +481,7 @@ const app = Vue.createApp({
         async fetch_sendemail() {
             try {
                 const response = await this.fetch_post('sendemail', { 
-                    to: this.toemailaddress,
+                    to: this.to_email,
                     price: this.price,
                  });
                 return await response.json();
@@ -489,6 +492,56 @@ const app = Vue.createApp({
         },
             
 
+        async toggleSubscribe(Target_group_id) {
+            // const group = this.groups.find(group => group.id === Target_group_id);
+            // group.subscribe_from = group.subscribe_from.includes(this.current_group)
+            //     ? group.subscribe_from.filter(id => id !== this.current_group)
+            //     : [...group.subscribe_from, this.current_group];
+            // 以下のエンドポイントをfetchする
+            // toggle_subscribe
+// app.post('/groups/toggle_subscribe', (req, res) => {
+//   // サブスクライドされる対象のgroupのid
+//   const { group_id } = req.body;
+//   // サブスクライドするgroupのid
+//   const { subscribe_group_id } = req.body;
+//   console.log(group_id, subscribe_group_id);
+//   // サブスクライドするgroupの情報を取得
+//   const subscribe_group = db.prepare('SELECT * FROM groups WHERE id = ?').get(subscribe_group_id);
+//   console.log(subscribe_group);
+//   // サブスクライドするgroupの情報を取得
+//   const group = db.prepare('SELECT * FROM groups WHERE id = ?').get(group_id);
+//   // サブスクライドするgroupのpasswordチェック
+//   const error = check_group_password(subscribe_group_id, req.body.password) ? null : 'Invalid password';
+//   if (error) {return res.status(403).json({ message: error }) };
+//   // サブスクライドされるgroupの情報を更新
+//   const new_subscribe_from = JSON.parse(subscribe_group.subscribe_from);
+//   new_subscribe_from.push(group_id);
+//   db.prepare('UPDATE groups SET subscribe_from = ? WHERE id = ?').run(JSON.stringify(new_subscribe_from), subscribe_group_id);
+//   // サブスクライドするgroupの情報を更新
+//   const new_subscribe = group.subscribe ? 0 : 1;
+//   db.prepare('UPDATE groups SET subscribe = ? WHERE id = ?').run(new_subscribe, group_id);
+//   res.json({ message: 'Group updated' });
+// });
+console.log("toggle_subscribe1");
+console.log(Target_group_id);
+            const response = await fetch('http://localhost:3000/toggle', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    group_id: Target_group_id,
+                    subscribe_group_id: this.current_group,
+                    password: this.password
+                })
+            });
+            // レスポンスが  res.json({ message: 'Group updated' }); ではない場合はチェックボックスを外す
+            if (response.message !== 'Group updated') {
+                group.subscribe_from = group.subscribe_from.filter(id => id !== this.current_group);
+            }
+
+
+        },
     },
     mounted() {
         this.fetchProfiles();
