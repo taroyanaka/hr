@@ -26,7 +26,13 @@
 <body>
 <div id="app">
 <header class="header">
-    <!-- initializeをfetchするボタン -->
+    <!-- toのemailアドレス input -->
+    送信先emailアドレス<input type="email" name="" id="" v-model="toemailaddress">
+    {{ toemailaddress }}
+    請求金額: <input type="number" name="" id="" v-model="price">
+    {{ price }}
+
+    <button @click="fetch_sendemail">fetch_sendemail</button>
     <button @click="fetchInitialize">initialize</button>
     <button @click="test">test</button>
 
@@ -198,6 +204,8 @@ const app = Vue.createApp({
     data() {
         return {
             endpoint_url: 'http://localhost:3000/',
+            toemailaddress: '@gmail.com',
+            price: 1000,
             is_sidebar_open: false,
             username: '',
             uid: null,
@@ -463,7 +471,22 @@ const app = Vue.createApp({
                 },
                 body: JSON.stringify(Body_json_str_obj)
             });
-        }
+        },
+        // sendemailをPOSTでfetchする関数。req.body.toに送信先のメールアドレスの文字列を送る
+        async fetch_sendemail() {
+            try {
+                const response = await this.fetch_post('sendemail', { 
+                    to: this.toemailaddress,
+                    price: this.price,
+                 });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+            
+
     },
     mounted() {
         this.fetchProfiles();
