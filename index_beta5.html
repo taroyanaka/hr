@@ -52,9 +52,9 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
 <div class="requested-que">
     <h3>リクエストされたプロフィール</h3>
     <ul>
-        <!-- <li v-for="request in filteredRequestedProfiles" :key="request.id">
+        <li v-for="request in filteredRequestedProfiles" :key="request.id">
             {{ request.name }} ({{ request.group }})
-            <button @click="respondToRequest(request, 'accept')">許可</button> -->
+            <button @click="respondToRequest(request, 'accept')">許可</button>
             <button @click="respondToRequest(request, 'reject')">拒否</button>
         </li>
     </ul>
@@ -132,7 +132,6 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
                                     <ul>
                                         <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
                                             {{ profile.name }}: {{ profile.bio }}
-                                            <button @click="requestProfile(profile)">リクエスト</button>
                                         </li>
                                     </ul>        
                                   </div>
@@ -140,12 +139,12 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
 
                               
 
-                            <!-- <p>
+                            <p>
                                 <label>
                                     <input type="checkbox" :checked="group.subscribe_from.includes(current_group)" @change="toggleSubscribe(group.id)">
                                     サブスクライブ
                                 </label>
-                            </p> -->
+                            </p>
 
 
                         </div>
@@ -180,23 +179,27 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
                     </li>
                 </ul>
             </div>
-            <!-- <div class="profile-column">
+            <div class="profile-column">
                 <h3>サブスクライブしたグループ</h3>
                 <ul class="profile-list">
                     <li v-for="group in subscribedGroups" :key="group.id" class="profile-item">
                         <div class="profile-info">
                             <h2>{{ group.name }}</h2>
                             <p>詳細: {{ group.detail }}</p>
+                            <!-- <p>Eメール: {{ group.email }}</p> -->
                             <ul>
                                 <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
                                     {{ profile.name }}: {{ profile.bio }}
+                                    <!-- requestProfile -->
                                     <button @click="requestProfile(profile)">リクエスト</button>
                                 </li>
                             </ul>
+
+
                         </div>
                     </li>
                 </ul>
-            </div> -->
+            </div>
         </div>
     </div>
 
@@ -225,9 +228,9 @@ const app = Vue.createApp({
             password: '',
             profiles: [],
             groups: [],
+            requestedProfiles: [],
             current_group: '',
             isOpen: false,
-            requestedProfiles: [],
         };
     },
     computed: {
@@ -243,55 +246,22 @@ const app = Vue.createApp({
         otherGroups() {
             return this.groups.filter(group => group.id !== this.current_group);
         },
-        // filteredRequestedProfiles() {
-        //     return this.requestedProfiles.filter(profile => profile.group === this.current_group);
-        // }
+        filteredRequestedProfiles() {
+            return this.requestedProfiles.filter(profile => profile.group === this.current_group);
+        }
     },
     methods: {
-        // 全部のリクエストの取得
-// app.get('/all_requests', (req, res) => {
-//   const requests = db.prepare(`
-//     SELECT * FROM requests
-//   `).all();
-
-//   res.json(requests);
-// }
-// );
-        // 全部のリクエストの取得
-        async fetchAllRequest() {
-            try {
-                const response = await fetch('http://localhost:3000/all_requests');
-                const data = await response.json();
-                this.requestedProfiles = data;
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        },
-
-        async fetchRequestProfiles() {
-        try {
-            const data = await this.fetchRequestProfilesAPI(this.current_group, this.password);
-            // OK以外はエラー処理
-            if (data.status !== 'OK') {
-                console.error('Error:', data);
-                alert('リクエストの取得に失敗しました');
-                return;
-            }
-        } catch (error) {
-            console.error('Error:', error);
-        }
-        },
         toggle_sidebar() {
             this.is_sidebar_open = !this.is_sidebar_open;
         },
         requestProfile(profile) {
             alert(`${profile.name}にリクエストを送信しました`);
-            // this.requestedProfiles.push(profile);
+            this.requestedProfiles.push(profile);
         },
         respondToRequest(request, response) {
             const message = response === 'accept' ? '許可のテンプレートメッセージ' : '拒否のテンプレートメッセージ';
             alert(`${request.group}と${request.name}に${message}を送信しました`);
-            // this.requestedProfiles = this.requestedProfiles.filter(p => p !== request);
+            this.requestedProfiles = this.requestedProfiles.filter(p => p !== request);
         },
         // toggleSubscribe(group_id) {
         //     const group = this.groups.find(group => group.id === group_id);
@@ -398,7 +368,7 @@ const app = Vue.createApp({
             await this.fetchInitializeAPI();
             await this.fetchProfiles();
             await this.fetchGroups();
-            // this.requestedProfiles = [];
+            this.requestedProfiles = [];
             alert('初期化が完了しました');
         } catch (error) {
             console.error('Error:', error);
@@ -497,19 +467,6 @@ const app = Vue.createApp({
                 throw error;
             }
         },
-        async fetchRequestProfilesAPI(profile_id, group_id, password) {
-            try {
-                const response = await fetch('http://localhost:3000/request_profiles', { 
-                    group_id: group_id,
-                    password: password
-                });
-                return await response.json();
-            } catch (error) {
-                console.error('Error:', error);
-                throw error;
-            }
-        },
-        
         toggle() {
             this.isOpen = !this.isOpen
         },
