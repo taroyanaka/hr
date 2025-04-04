@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <!-- 必要な変更点 -->
-(最適化早すぎ問題。顧客のニーズと俺の頭の中のギャップを作らないようにする。まずコミュってニーズ聞き出して持っていく)
-
-グループにemailのカラムを追加。当然cryptoする。
- => よく考えたらcryptoムリだった...できない...あまりにも無力...
- => とりあえず他のユーザーに見えないようにする
+(111最適化早すぎ問題。顧客のニーズと俺の頭の中のギャップを作らないようにする。まずコミュってニーズ聞き出して持っていく)
 
 リクエストを送信に紐付けて実装。
+=>おおまかに完了
+
+CRUDの一通りの流れをサンプルデータ使わずに可能かチェック
 
 サーバーのコードを本番環境に乗せる
 dbファイルを.dataディレクトリに置いて外部に見えないことを確認の上実装。
@@ -54,15 +53,26 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
 </header>
 
 <div class="requested-que">
+    <!-- 全部のリクエスト削除ボタン -->
+    <button @click="deleteAllRequests">リクエスト削除</button>
+
     <h3>リクエストされたプロフィール</h3>
     <ul>
-        <!-- <li v-for="request in filteredRequestedProfiles" :key="request.id">
-            {{ request.name }} ({{ request.group }})
-            <button @click="respondToRequest(request, 'accept')">許可</button> -->
-            <button @click="respondToRequest(request, 'reject')">拒否</button>
+        <!-- { "id": 1, "group_id": 1, "profile_id": 2, "group_id_from": 3, "created_at": "2023-10-01T12:00:00Z" }
+ -->
+        <li v-for="profile in requestedProfiles" :key="profile.id">
+            <div class="profile-info">
+                <p>グループID: {{ profile.group_id }}</p>
+                <p>プロフィールID: {{ profile.profile_id }}</p>
+                <p>リクエスト元グループID: {{ profile.group_id_from }}</p>
+                <!-- ISO形式をデコード -->
+                <p>リクエスト日時: {{ new Date(profile.created_at).toLocaleString() }}</p>
+
+            </div>
         </li>
     </ul>
 </div>
+
 
 <div class="input-for-group">
     <form @submit.prevent="createGroup">
@@ -135,22 +145,12 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
                                   <div v-if="isOpen">
                                     <ul>
                                         <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
-                                            {{ profile.name }}: {{ profile.bio }}
-                                            <button @click="requestProfile(profile)">リクエスト</button>
+                                            id:{{ profile.id }}, name:{{ profile.name }}, bio:{{ profile.bio }}
+                                            <button @click="fetchRequestProfiles(profile.id)">リクエスト</button>
                                         </li>
                                     </ul>        
                                   </div>
                                 </div>
-
-                              
-
-                            <!-- <p>
-                                <label>
-                                    <input type="checkbox" :checked="group.subscribe_from.includes(current_group)" @change="toggleSubscribe(group.id)">
-                                    サブスクライブ
-                                </label>
-                            </p> -->
-
 
                         </div>
                     </li>
@@ -184,23 +184,6 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
                     </li>
                 </ul>
             </div>
-            <!-- <div class="profile-column">
-                <h3>サブスクライブしたグループ</h3>
-                <ul class="profile-list">
-                    <li v-for="group in subscribedGroups" :key="group.id" class="profile-item">
-                        <div class="profile-info">
-                            <h2>{{ group.name }}</h2>
-                            <p>詳細: {{ group.detail }}</p>
-                            <ul>
-                                <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
-                                    {{ profile.name }}: {{ profile.bio }}
-                                    <button @click="requestProfile(profile)">リクエスト</button>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-                </ul>
-            </div> -->
         </div>
     </div>
 
@@ -214,7 +197,8 @@ const app = Vue.createApp({
             endpoint_url: 'http://localhost:3000/',
             to_email: '@gmail.com',
             price: 1000,
-            is_sidebar_open: false,
+            // is_sidebar_open: false,
+            is_sidebar_open: true,
             username: '',
             uid: null,
             logged_in: false,
@@ -226,7 +210,8 @@ const app = Vue.createApp({
             newGroupdetail: '',
             newGroupEmail: 'touroku_meado@gmail.com',
             groupPassword: '',
-            password: '',
+            // password: '',
+            password: 'pass1',
             profiles: [],
             groups: [],
             current_group: '',
@@ -234,6 +219,18 @@ const app = Vue.createApp({
             requestedProfiles: [],
         };
     },
+    mounted() {
+        console.log(1);
+        this.fetchProfiles();
+        console.log(2);
+        this.fetchGroups();
+        console.log(3);
+        this.fetchAllRequest();
+        console.log(4);
+    },
+
+
+
     computed: {
         filteredProfiles() {
             return this.profiles.filter(profile => profile.group !== this.current_group);
@@ -247,35 +244,41 @@ const app = Vue.createApp({
         otherGroups() {
             return this.groups.filter(group => group.id !== this.current_group);
         },
-        // filteredRequestedProfiles() {
-        //     return this.requestedProfiles.filter(profile => profile.group === this.current_group);
-        // }
     },
     methods: {
-        // 全部のリクエストの取得
-// app.get('/all_requests', (req, res) => {
-//   const requests = db.prepare(`
-//     SELECT * FROM requests
-//   `).all();
-
-//   res.json(requests);
-// }
-// );
-        // 全部のリクエストの取得
-        async fetchAllRequest() {
+        // 全部のリクエストを削除(開発用) /delete_all_requestsをgetでfetch
+        async deleteAllRequests() {
             try {
-                const response = await fetch('http://localhost:3000/all_requests');
+                const response = await fetch('http://localhost:3000/delete_all_requests');
+                if (data.status !== 'OK') {
+                    console.error('Error:', data);
+                    alert('リクエストの削除に失敗しました');
+                    return;
+                }
                 const data = await response.json();
-                this.requestedProfiles = data;
+                await fetchAllRequest();
+                alert('リクエストが正常に削除されました');
             } catch (error) {
                 console.error('Error:', error);
             }
         },
 
-        async fetchRequestProfiles() {
+        // 全部のリクエストの取得
+        async fetchAllRequest() {
+            try {
+                const response = await fetch('http://localhost:3000/all_requests');
+                const data = await response.json();
+                console.log(data);
+                this.requestedProfiles = data || [];
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        },
+
+        async fetchRequestProfiles(profile_id) {
         try {
-            const data = await this.fetchRequestProfilesAPI(this.current_group, this.password);
-            // OK以外はエラー処理
+            console.log('fetchRequestProfiles');
+            const data = await this.fetchRequestProfilesAPI(profile_id, this.current_group, this.password);
             if (data.status !== 'OK') {
                 console.error('Error:', data);
                 alert('リクエストの取得に失敗しました');
@@ -285,25 +288,29 @@ const app = Vue.createApp({
             console.error('Error:', error);
         }
         },
+        async fetchRequestProfilesAPI(profile_id, group_id, password) {
+            try {
+                console.log('1 fetchRequestProfilesAPI');
+                const response = await this.fetch_post('request_profiles', {
+                    profile_id: profile_id,
+                    group_id: group_id,
+                    password: password
+                });
+                if (response.status !== 'OK') {
+                    console.error('Error:', response);
+                    throw new Error('Forbidden: Invalid credentials');
+                }
+                console.log('2 fetchRequestProfilesAPI');
+
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
         toggle_sidebar() {
             this.is_sidebar_open = !this.is_sidebar_open;
         },
-        requestProfile(profile) {
-            alert(`${profile.name}にリクエストを送信しました`);
-            // this.requestedProfiles.push(profile);
-        },
-        respondToRequest(request, response) {
-            const message = response === 'accept' ? '許可のテンプレートメッセージ' : '拒否のテンプレートメッセージ';
-            alert(`${request.group}と${request.name}に${message}を送信しました`);
-            // this.requestedProfiles = this.requestedProfiles.filter(p => p !== request);
-        },
-        // toggleSubscribe(group_id) {
-        //     const group = this.groups.find(group => group.id === group_id);
-        //     group.subscribe_from = group.subscribe_from.includes(this.current_group)
-        //         ? group.subscribe_from.filter(id => id !== this.current_group)
-        //         : [...group.subscribe_from, this.current_group];
-        //     this.toggle
-        // },
         async addProfile() {
         try {
             const newProfile = {
@@ -402,7 +409,6 @@ const app = Vue.createApp({
             await this.fetchInitializeAPI();
             await this.fetchProfiles();
             await this.fetchGroups();
-            // this.requestedProfiles = [];
             alert('初期化が完了しました');
         } catch (error) {
             console.error('Error:', error);
@@ -500,20 +506,7 @@ const app = Vue.createApp({
                 console.error('Error:', error);
                 throw error;
             }
-        },
-        async fetchRequestProfilesAPI(profile_id, group_id, password) {
-            try {
-                const response = await fetch('http://localhost:3000/request_profiles', { 
-                    group_id: group_id,
-                    password: password
-                });
-                return await response.json();
-            } catch (error) {
-                console.error('Error:', error);
-                throw error;
-            }
-        },
-        
+        },        
         toggle() {
             this.isOpen = !this.isOpen
         },
@@ -540,61 +533,6 @@ const app = Vue.createApp({
             }
         },
             
-
-        async toggleSubscribe(Target_group_id) {
-            // const group = this.groups.find(group => group.id === Target_group_id);
-            // group.subscribe_from = group.subscribe_from.includes(this.current_group)
-            //     ? group.subscribe_from.filter(id => id !== this.current_group)
-            //     : [...group.subscribe_from, this.current_group];
-            // 以下のエンドポイントをfetchする
-            // toggle_subscribe
-// app.post('/groups/toggle_subscribe', (req, res) => {
-//   // サブスクライドされる対象のgroupのid
-//   const { group_id } = req.body;
-//   // サブスクライドするgroupのid
-//   const { subscribe_group_id } = req.body;
-//   console.log(group_id, subscribe_group_id);
-//   // サブスクライドするgroupの情報を取得
-//   const subscribe_group = db.prepare('SELECT * FROM groups WHERE id = ?').get(subscribe_group_id);
-//   console.log(subscribe_group);
-//   // サブスクライドするgroupの情報を取得
-//   const group = db.prepare('SELECT * FROM groups WHERE id = ?').get(group_id);
-//   // サブスクライドするgroupのpasswordチェック
-//   const error = check_group_password(subscribe_group_id, req.body.password) ? null : 'Invalid password';
-//   if (error) {return res.status(403).json({ message: error }) };
-//   // サブスクライドされるgroupの情報を更新
-//   const new_subscribe_from = JSON.parse(subscribe_group.subscribe_from);
-//   new_subscribe_from.push(group_id);
-//   db.prepare('UPDATE groups SET subscribe_from = ? WHERE id = ?').run(JSON.stringify(new_subscribe_from), subscribe_group_id);
-//   // サブスクライドするgroupの情報を更新
-//   const new_subscribe = group.subscribe ? 0 : 1;
-//   db.prepare('UPDATE groups SET subscribe = ? WHERE id = ?').run(new_subscribe, group_id);
-//   res.json({ message: 'Group updated' });
-// });
-console.log("toggle_subscribe1");
-console.log(Target_group_id);
-            const response = await fetch('http://localhost:3000/toggle', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    group_id: Target_group_id,
-                    subscribe_group_id: this.current_group,
-                    password: this.password
-                })
-            });
-            // レスポンスが  res.json({ message: 'Group updated' }); ではない場合はチェックボックスを外す
-            if (response.message !== 'Group updated') {
-                group.subscribe_from = group.subscribe_from.filter(id => id !== this.current_group);
-            }
-
-
-        },
-    },
-    mounted() {
-        this.fetchProfiles();
-        this.fetchGroups();
     },
     watch: {
         current_group() {
