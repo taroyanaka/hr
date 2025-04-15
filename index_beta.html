@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- 必要な変更点 -->
-(333最適化早すぎ問題。顧客のニーズと俺の頭の中のギャップを作らないようにする。まずコミュってニーズ聞き出して持っていく)
+(777最適化早すぎ問題。顧客のニーズと俺の頭の中のギャップを作らないようにする。まずコミュってニーズ聞き出して持っていく)
 
 リクエストを送信に紐付けて実装。
 =>おおまかに完了
@@ -10,14 +10,22 @@ CRUDの一通りの流れをサンプルデータ使わずに可能かチェッ�
 
 許諾の流れも実装する
     許諾依頼のメール送信大体作ったから動かしてデバッグ
+=> だいたいOK
 
-サーバーのコードを本番環境に乗せる
-dbファイルを.dataディレクトリに置いて外部に見えないことを確認の上実装。
+=>サーバーのコードを本番環境に乗せる
+    dbファイルを.dataディレクトリに置いて外部に見えないことを確認の上実装。
+    完了
+        glitch.comのnode.jsのバージョンがアプデされてないため
+        ※cotton-concrete-catsupのpackage.jsonからnode moduleの古いver
+        (動くことを別アプリで確認済み)指定で動かした
 
 以上の機能実装(登録、リクエストメール送信)まで完了したら
 デザイン適当にタブ分けして最低限のテストしたら実装フェーズ完了
 
-    店舗に見せに行く(ついでに酒を飲んで遊んでくる)
+店舗に見せに行く(ついでに酒を飲んで遊んでくる)
+
+※リクエストテーブルへの追加(二重送信を回避したり他のリクエストとバッティングを防ぐためのテーブル)
+ についてはペンディング
 
 <html lang="en">
 <head>
@@ -131,7 +139,6 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
 
 <div class="each_data content">
     <div v-show="current_tab === 'dev'" class="all_data">
-
         <div class="profile-columns">
             <div class="profile-column">
                 <h3>他のグループ</h3>
@@ -150,7 +157,27 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
                                     <ul>
                                         <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
                                             id:{{ profile.id }}, name:{{ profile.name }}, bio:{{ profile.bio }}
-                                            <button @click="fetchRequestProfiles(profile.id)">リクエスト</button>
+                                            <!-- <button @click="fetchRequestProfiles(profile.id)">リクエスト</button> -->
+                                             <!-- isRequestedがtrueのものはクリックできないようにする -->
+<!-- {{"group.id: "+ group.id}}
+{{"profile.id: "+ profile.id}}
+{{"requestedProfiles.group_id: "+ requestedProfiles[0].group_id}}
+{{"requestedProfiles.profile_id: "+ requestedProfiles[0].profile_id}}
+{{"requestedProfiles.group_id_from: "+ requestedProfiles[0].group_id_from}} -->
+<button 
+  v-if="!requestedProfiles.some(request => request.profile_id === profile.id && request.group_id_from === current_group)" 
+  @click="fetchRequestProfiles(profile.id)"
+>
+  リクエスト
+</button>
+<div>
+    <span v-if="requestedProfiles.some(request => request.profile_id === profile.id && request.group_id_from === current_group)">
+        リクエスト済み
+    </span>
+</div>
+                                            <!-- <button @click="fetchRequestProfiles(profile.id)">リクエスト</button> -->
+                                            
+
                                         </li>
                                     </ul>        
                                   </div>
@@ -198,7 +225,8 @@ dbファイルを.dataディレクトリに置いて外部に見えないこと�
 const app = Vue.createApp({
     data() {
         return {
-            endpoint_url: 'http://localhost:3000/',
+            // endpoint_url: 'http://localhost:3000/',
+            endpoint_url: 'https://discreet-western-locust.glitch.me/',
             to_email: '@gmail.com',
             price: 1000,
             // is_sidebar_open: false,
@@ -253,7 +281,7 @@ const app = Vue.createApp({
         // 全部のリクエストを削除(開発用) /delete_all_requestsをgetでfetch
         async deleteAllRequests() {
             try {
-                const response = await fetch('http://localhost:3000/delete_all_requests');
+                const response = await fetch(this.endpoint_url+'delete_all_requests');
                 if (data.status !== 'OK') {
                     console.error('Error:', data);
                     alert('リクエストの削除に失敗しました');
@@ -270,7 +298,7 @@ const app = Vue.createApp({
         // 全部のリクエストの取得
         async fetchAllRequest() {
             try {
-                const response = await fetch('http://localhost:3000/all_requests');
+                const response = await fetch(this.endpoint_url+'all_requests');
                 const data = await response.json();
                 console.log(data);
                 this.requestedProfiles = data || [];
@@ -429,7 +457,7 @@ const app = Vue.createApp({
         async fetchProfilesAPI() {
         try {
             console.log('fetchProfilesAPI');
-            const response = await fetch('http://localhost:3000/profiles');
+            const response = await fetch(this.endpoint_url+'profiles');
             return await response.json();
         } catch (error) {
             console.error('Error:', error);
@@ -439,7 +467,7 @@ const app = Vue.createApp({
         async fetchGroupsAPI() {
         console.log('fetchGroupsAPI');
         try {
-            const response = await fetch('http://localhost:3000/groups');
+            const response = await fetch(this.endpoint_url+'groups');
             return await response.json();
         } catch (error) {
             console.error('Error:', error);
@@ -460,7 +488,7 @@ const app = Vue.createApp({
         },
         async createGroupAPI(newGroup) {
             try {
-                const response = await this.fetch_post('groups', { ...newGroup });
+                const response = await this.fetch_post('create_groups', { ...newGroup });
                 return await response.json();
             } catch (error) {
                 console.error('Error:', error);
@@ -495,7 +523,7 @@ const app = Vue.createApp({
         },
         async fetchInitializeAPI() {
             try {
-                const response = await fetch('http://localhost:3000/initialize');
+                const response = await fetch(this.endpoint_url+'initialize');
                 return await response.json();
             } catch (error) {
                 console.error('Error:', error);
