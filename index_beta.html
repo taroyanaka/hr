@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- 必要な変更点 -->
-(999最適化早すぎ問題。顧客のニーズと俺の頭の中のギャップを作らないようにする。まずコミュってニーズ聞き出して持っていく)
+(111最適化早すぎ問題。顧客のニーズと俺の頭の中のギャップを作らないようにする。まずコミュってニーズ聞き出して持っていく)
 
 リクエストを送信に紐付けて実装。
 =>おおまかに完了
@@ -19,8 +19,10 @@ CRUDの一通りの流れをサンプルデータ使わずに可能かチェッ�
         ※cotton-concrete-catsupのpackage.jsonからnode moduleの古いver
         (動くことを別アプリで確認済み)指定で動かした
 
-以上の機能実装(登録、リクエストメール送信)まで完了したら
-デザイン適当にタブ分けして最低限のテストしたら実装フェーズ完了
+以上の機能実装(登録、リクエストメール送信)まで完了したらデザイン適当にタブ分け
+=> OK
+
+ID/PASS部分いじって(連番のpassをランダム生成に)最低限のテストして実装フェーズ完了
 
 店舗に見せに行く(ついでに酒を飲んで遊んでくる)
 
@@ -34,8 +36,8 @@ CRUDの一通りの流れをサンプルデータ使わずに可能かチェッ�
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>insert link</title>
 <!-- <script src="./lib/profiles_data.js"></script> -->
-<script src="./lib/firebasejs_8.6.1_firebase-app.js"></script>
-<script src="./lib/firebasejs_8.4.0_firebase-auth.js"></script>
+<!-- <script src="./lib/firebasejs_8.6.1_firebase-app.js"></script> -->
+<!-- <script src="./lib/firebasejs_8.4.0_firebase-auth.js"></script> -->
 <script src="./lib/vue@3.5.13.global.prod.js"></script>
 <script src="./lib/validation.js"></script>
 <script type="module" src="./lib/validation.js"></script>
@@ -164,24 +166,25 @@ body {
 .sidebar {
     position: fixed;
     top: 0;
-    left: -250px;
+    right: -250px; /* 左から右に変更 */
     width: 250px;
     height: 100%;
     padding: 20px;
-    transition: left 0.3s ease-in-out;
+    transition: right 0.3s ease-in-out; /* left を right に変更 */
+    background-color: #f4f4f4;
 }
 
 .sidebar.open {
-    left: 0;
+    right: 0; /* 左から右に変更 */
 }
 
 .sidebar .close-button {
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
     position: absolute;
     top: 10px;
-    right: 10px;
+    left: 10px; /* 右側に配置する場合は left を使用 */
+    font-size: 24px;
+    border: none;
+    cursor: pointer;
 }
 
 .sidebar h2 {
@@ -298,94 +301,178 @@ input[readonly] {
     background-color: gray;
 }
 
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: -250px;
-  width: 250px;
-  height: 100%;
-  background: #f4f4f4;
-  padding: 20px;
-  transition: left 0.3s ease-in-out;
-}
-
-.sidebar.open {
-  left: 0;
-}
-
-.sidebar .close-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-}
-
-.content {
-  margin-left: 260px;
-  padding: 20px;
-}
-
-.content > div {
-  display: none;
-}
-
-.content > div[v-show="true"] {
-  display: block;
-}
 </style>
 </head>
 <body>
-    <div id="app">
-        <header class="header_block">
-          <div class="top-button">
-            <button @click="toggleSidebar">メニュー</button>
-          </div>
-        </header>
+<div id="app">
+<header class="header_block">
+    <div class="top-button">
+    <button @click="toggleSidebar">メニュー</button>
+    </div>
+</header>
+    <div class="sidebar" :class="{ open: isSidebarOpen }">
+        <button class="close-button" @click="toggleSidebar">×</button>
+        <h2>メニュー</h2>
+        <ul>
+        <li><button @click="currentBlock = 'content_block'">メイン画面</button></li>
+        <li><button @click="currentBlock = 'input-for-profile_block'">従業員追加</button></li>
+
+        <li><button @click="currentBlock = 'input-for-group_block'">サイト管理人専用画面</button></li>
+        </ul>
+    </div>
       
-        <!-- サイドバー -->
-        <div class="sidebar" :class="{ open: isSidebarOpen }">
-          <button class="close-button" @click="toggleSidebar">×</button>
-          <h2>メニュー</h2>
-          <ul>
-            <li><button @click="currentBlock = 'requested-que_block'">リクエスト一覧</button></li>
-            <li><button @click="currentBlock = 'input-for-group_block'">グループ作成</button></li>
-            <li><button @click="currentBlock = 'id_pass_block'">IDとパスワード</button></li>
-            <li><button @click="currentBlock = 'input-for-profile_block'">プロフィール作成</button></li>
-          </ul>
-        </div>
-      
-        <!-- コンテンツ -->
-        <div class="content">
-          <div class="requested-que_block" v-show="currentBlock === 'requested-que_block'">
+<div class="all">
+          <!-- <div class="requested-que_block" v-show="currentBlock === 'requested-que_block'">
+            <button @click="deleteAllRequests">リクエスト削除</button>
             <h3>リクエストされたプロフィール</h3>
-            <!-- リクエスト一覧の内容 -->
-          </div>
+            <ul>
+            <li v-for="profile in requestedProfiles" :key="profile.id">
+                <div class="profile-info">
+                    <p>グループID: {{ profile.group_id }}</p>
+                    <p>プロフィールID: {{ profile.profile_id }}</p>
+                    <p>リクエスト元グループID: {{ profile.group_id_from }}</p>
+                    <p>リクエスト日時: {{ new Date(profile.created_at).toLocaleString() }}</p>
+                </div>
+            </li>
+            </ul>
+          </div> -->
       
           <div class="input-for-group_block" v-show="currentBlock === 'input-for-group_block'">
-            <h3>グループ作成</h3>
-            <!-- グループ作成フォーム -->
+            <h3>サイト管理人専用画面</h3>
+            <form @submit.prevent="createGroup">
+                <label for="new-group-name">新しいグループ名:</label>
+                <input type="text" id="new-group-name" v-model="newGroupName">
+                <label for="new-group-detail">詳細:</label>
+                <input type="text" id="new-group-detail" v-model="newGroupdetail">
+                <label for="new-group-email">Eメール:</label>
+                <input type="email" id="new-group-email" v-model="newGroupEmail">
+        
+                <label for="group-password">adminパスワード:</label>
+                <input type="password" id="group-password" v-model="groupPassword" autocomplete="current-password">
+                <button type="submit">グループ作成</button>
+            </form>
           </div>
-      
-          <div class="id_pass_block" v-show="currentBlock === 'id_pass_block'">
-            <h3>IDとパスワード</h3>
-            <!-- IDとパスワード入力フォーム -->
+            
+
+          <div class="content_block" v-show="currentBlock === 'content_block'">
+            <div v-show="current_tab === 'dev'" class="all_data">
+                <div class="id_pass_form">
+                    <h3>IDとパスワード</h3>
+                    グループのidとpasswordを入力してください
+                    <br>
+                    id:
+                    <input type="number" id="current_group" v-model="current_group">
+                        <button @click="current_group = 1">1</button>
+                        <button @click="current_group = 2">2</button>
+                        <button @click="current_group = 3">3</button>
+                
+                        password: <input type="password" id="password" v-model="password" autocomplete>
+                </div>
+
+                <div class="profile-columns">
+                    <div class="profile-column">
+                        <h3>他のグループ</h3>
+                        <ul class="profile-list">
+                            <li v-for="group in otherGroups" :key="group.id" class="profile-item">
+                                <div class="profile-info">
+                                    <h2>{{ group.name }}</h2>
+                                    <p>詳細: {{ group.detail }}</p>
+                                    <!-- <p>Eメール: {{ group.email }}</p> -->
+                                        <div>
+                                          <button @click="toggle">
+                                            {{ isOpen ? '閉じる' : 'プロフィール一覧' }}
+                                          </button>
+                                      
+                                          <div v-if="isOpen">
+                                            <ul>
+                                                <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
+                                                    id:{{ profile.id }}, name:{{ profile.name }}, bio:{{ profile.bio }}
+                                                    <!-- <button @click="fetchRequestProfiles(profile.id)">リクエスト</button> -->
+                                                     <!-- isRequestedがtrueのものはクリックできないようにする -->
+        <!-- {{"group.id: "+ group.id}}
+        {{"profile.id: "+ profile.id}}
+        {{"requestedProfiles.group_id: "+ requestedProfiles[0].group_id}}
+        {{"requestedProfiles.profile_id: "+ requestedProfiles[0].profile_id}}
+        {{"requestedProfiles.group_id_from: "+ requestedProfiles[0].group_id_from}} -->
+        <button 
+          v-if="!requestedProfiles.some(request => request.profile_id === profile.id && request.group_id_from === current_group)" 
+          @click="fetchRequestProfiles(profile.id)"
+        >
+          リクエスト
+        </button>
+        <div>
+            <span v-if="requestedProfiles.some(request => request.profile_id === profile.id && request.group_id_from === current_group)">
+                リクエスト済み
+            </span>
+        </div>
+                                                    <!-- <button @click="fetchRequestProfiles(profile.id)">リクエスト</button> -->
+                                                    
+        
+                                                </li>
+                                            </ul>        
+                                          </div>
+                                        </div>
+        
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="profile-column">
+                        <h3>自分のグループ</h3>
+                        <!-- カレントグループを表示 -->
+                         <div v-if="current_group">
+                        <h4>{{ groups.find(group => group.id === current_group).name }}</h4>
+                        <p>詳細: {{ groups.find(group => group.id === current_group).detail }}</p>
+                        <!-- <p>Eメール {{ groups.find(group => group.id === current_group).email }}</p> -->
+                        <!-- <p>営業時間: {{ groups.find(group => group.id === current_group).hours }}</p> -->
+                        </div>
+                        <ul class="profile-list">
+                            <li v-for="(profile, index) in ownGroupProfiles" :key="index" class="profile-item">
+                                <div class="profile-info">
+                                    <h2>{{ profile.name }}</h2>
+                                    <p>{{ profile.bio }}</p>
+                                    <p>グループ: {{ profile.group }}</p>
+                                    <p>ステータス: 
+                                        <label>
+                                            <input type="radio" v-model="profile.status" :value="'OK'"> OK
+                                        </label>
+                                        <label>
+                                            <input type="radio" v-model="profile.status" :value="'NG'"> NG
+                                        </label>
+                                    </p>
+                                </div>
+                                <button @click="profiles_delete(profile.id)">削除</button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>        
           </div>
-      
+
           <div class="input-for-profile_block" v-show="currentBlock === 'input-for-profile_block'">
             <h3>プロフィール作成</h3>
-            <!-- プロフィール作成フォーム -->
+
+            <div>
+                <label for="profile-name">プロフィール名:</label>
+                <input type="text" id="profile-name" v-model="newProfileName">
+            </div>
+            <div>
+                <label for="profile-bio">プロフィールの説明:</label>
+                <input type="text" id="profile-bio" v-model="newProfileBio">
+            </div>
+            <button @click="addProfile">プロフィール追加</button>
+            <button @click="clearForm">クリア</button>
           </div>
-        </div>
-      </div>
+
+
+</div>
+</div>
 <script>
 const app = Vue.createApp({
     data() {
         return {
-            endpoint_url: 'http://localhost:3000/',
-            // endpoint_url: 'https://discreet-western-locust.glitch.me/',
+            // endpoint_url: 'http://localhost:3000/',
+            endpoint_url: 'https://discreet-western-locust.glitch.me/',
             to_email: '@gmail.com',
             price: 1000,
             // is_sidebar_open: false,
@@ -409,7 +496,7 @@ const app = Vue.createApp({
             isOpen: false,
             requestedProfiles: [],
             isSidebarOpen: false, // サイドバーの開閉状態
-            currentBlock: 'requested-que_block', // 現在表示中の_block
+            currentBlock: 'content_block', // 現在のブロック
   
         };
     },
@@ -708,7 +795,7 @@ const app = Vue.createApp({
             return await fetch(this.endpoint_url + Endpoint, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'applicatio_bぉckn/json'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(Body_json_str_obj)
             });
