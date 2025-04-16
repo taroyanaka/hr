@@ -40,346 +40,183 @@ CRUDの一通りの流れをサンプルデータ使わずに可能かチェッ�
 <script src="./lib/validation.js"></script>
 <script type="module" src="./lib/validation.js"></script>
 <link rel="stylesheet" href="./lib/reset.css">
-<!-- <link rel="stylesheet" href="./lib/index.css"> -->
+<link rel="stylesheet" href="./lib/index.css">
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
-<style>
-body {
-    margin: 0;
-    padding: 0;
-}
-
-.header_block {
-    padding: 0 0;
-    text-align: center;
-}
-
-.top-button {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    margin: 0px;
-}
-
-.top-button button {
-    border: none;
-    padding: 15px 30px;
-    cursor: pointer;
-    margin-bottom: 10px;
-}
-
-.side_bar {
-    width: 250px;
-    float: left;
-    height: 100vh;
-    padding: 20px;
-}
-
-.side_bar .tablinks {
-    display: block;
-    padding: 15px;
-    text-align: left;
-    border: none;
-    width: 100%;
-    cursor: pointer;
-    margin-bottom: 10px;
-}
-
-.content_block {
-}
-
-.content_block h3 {
-    margin-bottom: 20px;
-}
-
-.content_block ul {
-    list-style-type: none;
-    padding: 0;
-}
-
-.content_block li {
-    margin: 15px 0;
-    padding: 15px;
-    border: 1px solid;
-    border-radius: 5px;
-}
-
-.content_block button {
-    border: none;
-    padding: 10px 20px;
-    cursor: pointer;
-    margin-left: 10px;
-}
-
-.login h1, .login h2 {
-    margin-bottom: 20px;
-}
-
-.login input[type="button"] {
-    border: none;
-    padding: 15px 30px;
-    cursor: pointer;
-    margin-top: 10px;
-}
-
-.insert form {
-    border-radius: 5px;
-    margin-bottom: 20px;
-}
-
-.insert label {
-    display: block;
-    margin-bottom: 15px;
-}
-
-.insert textarea {
-    width: 100%;
-    height: 300px;
-    border: 1px solid;
-    border-radius: 5px;
-}
-
-.insert .form-row {
-    display: flex;
-    justify-content_block: space-between;
-    margin-bottom: 20px;
-}
-
-.insert .form-row label {
-    flex: 1;
-}
-
-.insert button.submit {
-    border: none;
-    padding: 15px 30px;
-    cursor: pointer;
-}
-
-.submit {
-    position: fixed;
-    top: 0;
-    right: 10rem;
-}
-
-.sidebar {
-    position: fixed;
-    top: 0;
-    left: -250px;
-    width: 250px;
-    height: 100%;
-    padding: 20px;
-    transition: left 0.3s ease-in-out;
-}
-
-.sidebar.open {
-    left: 0;
-}
-
-.sidebar .close-button {
-    border: none;
-    font-size: 24px;
-    cursor: pointer;
-    position: absolute;
-    top: 10px;
-    right: 10px;
-}
-
-.sidebar h2 {
-    margin-bottom: 20px;
-}
-
-.sidebar ul {
-    list-style: none;
-}
-
-.sidebar ul li {
-    margin: 15px 0;
-}
-
-.sidebar ul li a {
-    text-decoration: none;
-    display: block;
-    padding: 15px;
-}
-
-.content_block {
-    margin: 20px;
-    padding: 20px;
-    border-radius: 8px;
-}
-
-.menu-buttons {
-    display: flex;
-    flex-direction: column;
-}
-
-.menu-buttons .tablinks {
-    margin-bottom: 10px;
-}
-
-.content_block button {
-    font-size: 0.5em;
-    text-decoration: underline;
-    border: none;
-    cursor: pointer;
-}
-
-.home-button {
-    border: none;
-    font-size: 3rem;
-    cursor: pointer;
-    margin-bottom: 20px;
-    margin-right: 2rem;
-}
-
-.clear_filters_div {
-    margin-top: 0.5rem;
-}
-
-.preview {
-    position: fixed;
-    top: 0;
-    right: 20rem;
-}
-
-.preview-line {
-    margin: 0.5rem 1rem;
-    padding: 0.5rem;
-}
-
-.black-button {
-    border: none;
-    padding: 15px 30px;
-    cursor: pointer;
-    margin-bottom: 10px;
-}
-
-.profile-columns {
-    display: flex;
-    gap: 20px;
-}
-
-.profile-column {
-    flex: 1;
-}
-
-.profile-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.profile-item {
-    display: flex;
-    align-items: center;
-    justify-content_block: space-between;
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-}
-
-.profile-info {
-    flex: 1;
-}
-
-.profile-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.like-button, .dislike-button, .toggle-status-button {
-    padding: 5px 10px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-
-/* readonlyはグレーアウトする */
-input[readonly] {
-    background-color: gray;
-}
-
-.sidebar {
-  position: fixed;
-  top: 0;
-  left: -250px;
-  width: 250px;
-  height: 100%;
-  background: #f4f4f4;
-  padding: 20px;
-  transition: left 0.3s ease-in-out;
-}
-
-.sidebar.open {
-  left: 0;
-}
-
-.sidebar .close-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: none;
-  border: none;
-  font-size: 20px;
-  cursor: pointer;
-}
-
-.content {
-  margin-left: 260px;
-  padding: 20px;
-}
-
-.content > div {
-  display: none;
-}
-
-.content > div[v-show="true"] {
-  display: block;
-}
-</style>
 </head>
 <body>
-    <div id="app">
-        <header class="header_block">
-          <div class="top-button">
-            <button @click="toggleSidebar">メニュー</button>
-          </div>
-        </header>
-      
-        <!-- サイドバー -->
-        <div class="sidebar" :class="{ open: isSidebarOpen }">
-          <button class="close-button" @click="toggleSidebar">×</button>
-          <h2>メニュー</h2>
-          <ul>
-            <li><button @click="currentBlock = 'requested-que_block'">リクエスト一覧</button></li>
-            <li><button @click="currentBlock = 'input-for-group_block'">グループ作成</button></li>
-            <li><button @click="currentBlock = 'id_pass_block'">IDとパスワード</button></li>
-            <li><button @click="currentBlock = 'input-for-profile_block'">プロフィール作成</button></li>
-          </ul>
+<div id="app">
+
+<header class="header_block">
+    <!-- toのemailアドレス input -->
+    送信先emailアドレス<input type="email" name="" id="" v-model="to_email">
+    {{ to_email }}
+    請求金額: <input type="number" name="" id="" v-model="price">
+    {{ price }}
+
+    <button @click="fetch_sendemail">fetch_sendemail</button>
+    <button @click="fetchInitialize">initialize</button>
+    <button @click="test">test</button>
+
+    <div class="top-button">
+        <a href="./b_p.html" class="home-button">
+            <span class="material-icons">home</span>
+        </a>
+    </div>
+</header>
+
+<div class="requested-que_block">
+    <!-- 全部のリクエスト削除ボタン -->
+    <button @click="deleteAllRequests">リクエスト削除</button>
+
+    <h3>リクエストされたプロフィール</h3>
+    <ul>
+        <!-- { "id": 1, "group_id": 1, "profile_id": 2, "group_id_from": 3, "created_at": "2023-10-01T12:00:00Z" }
+ -->
+        <li v-for="profile in requestedProfiles" :key="profile.id">
+            <div class="profile-info">
+                <p>グループID: {{ profile.group_id }}</p>
+                <p>プロフィールID: {{ profile.profile_id }}</p>
+                <p>リクエスト元グループID: {{ profile.group_id_from }}</p>
+                <!-- ISO形式をデコード -->
+                <p>リクエスト日時: {{ new Date(profile.created_at).toLocaleString() }}</p>
+
+            </div>
+        </li>
+    </ul>
+</div>
+
+<div class="input-for-group_block">
+    <form @submit.prevent="createGroup">
+        <label for="new-group-name">新しいグループ名:</label>
+        <input type="text" id="new-group-name" v-model="newGroupName">
+        <label for="new-group-detail">詳細:</label>
+        <input type="text" id="new-group-detail" v-model="newGroupdetail">
+        <label for="new-group-email">Eメール:</label>
+        <input type="email" id="new-group-email" v-model="newGroupEmail">
+
+        <label for="group-password">adminパスワード:</label>
+        <input type="password" id="group-password" v-model="groupPassword" autocomplete="current-password">
+        <button type="submit">グループ作成</button>
+    </form>
+</div>
+
+<div class="id_pass_block">
+    グループのidとpasswordを入力してください
+    <br>
+                    <!-- <label for="group-select">カレントグループを選択:</label>
+        <select id="group-select" v-model="current_group">
+            <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
+        </select> -->
+            <!-- input:numberに変更 -->
+            id:
+            <input type="number" id="current_group" v-model="current_group">
+            <!-- current_groupを入力するボタン 1,2,3それぞれ -->
+               <button @click="current_group = 1">1</button>
+               <button @click="current_group = 2">2</button>
+               <button @click="current_group = 3">3</button>
+       
+               password: <input type="password" id="password" v-model="password" autocomplete>
+</div>
+<br>
+
+<div class="input-for-profile_block">
+
+    <div>
+        <label for="profile-name">プロフィール名:</label>
+        <input type="text" id="profile-name" v-model="newProfileName">
+    </div>
+    <div>
+        <label for="profile-bio">プロフィールの説明:</label>
+        <input type="text" id="profile-bio" v-model="newProfileBio">
+    </div>
+    <button @click="addProfile">プロフィール追加</button>
+    <button @click="clearForm">クリア</button>
+</div>
+
+<div class="content_block">
+    <div v-show="current_tab === 'dev'" class="all_data">
+        <div class="profile-columns">
+            <div class="profile-column">
+                <h3>他のグループ</h3>
+                <ul class="profile-list">
+                    <li v-for="group in otherGroups" :key="group.id" class="profile-item">
+                        <div class="profile-info">
+                            <h2>{{ group.name }}</h2>
+                            <p>詳細: {{ group.detail }}</p>
+                            <!-- <p>Eメール: {{ group.email }}</p> -->
+                                <div>
+                                  <button @click="toggle">
+                                    {{ isOpen ? '閉じる' : 'プロフィール一覧' }}
+                                  </button>
+                              
+                                  <div v-if="isOpen">
+                                    <ul>
+                                        <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
+                                            id:{{ profile.id }}, name:{{ profile.name }}, bio:{{ profile.bio }}
+                                            <!-- <button @click="fetchRequestProfiles(profile.id)">リクエスト</button> -->
+                                             <!-- isRequestedがtrueのものはクリックできないようにする -->
+<!-- {{"group.id: "+ group.id}}
+{{"profile.id: "+ profile.id}}
+{{"requestedProfiles.group_id: "+ requestedProfiles[0].group_id}}
+{{"requestedProfiles.profile_id: "+ requestedProfiles[0].profile_id}}
+{{"requestedProfiles.group_id_from: "+ requestedProfiles[0].group_id_from}} -->
+<button 
+  v-if="!requestedProfiles.some(request => request.profile_id === profile.id && request.group_id_from === current_group)" 
+  @click="fetchRequestProfiles(profile.id)"
+>
+  リクエスト
+</button>
+<div>
+    <span v-if="requestedProfiles.some(request => request.profile_id === profile.id && request.group_id_from === current_group)">
+        リクエスト済み
+    </span>
+</div>
+                                            <!-- <button @click="fetchRequestProfiles(profile.id)">リクエスト</button> -->
+                                            
+
+                                        </li>
+                                    </ul>        
+                                  </div>
+                                </div>
+
+                        </div>
+                    </li>
+                </ul>
+            </div>
+            <div class="profile-column">
+                <h3>自分のグループ</h3>
+                <!-- カレントグループを表示 -->
+                 <div v-if="current_group">
+                <h4>{{ groups.find(group => group.id === current_group).name }}</h4>
+                <p>詳細: {{ groups.find(group => group.id === current_group).detail }}</p>
+                <!-- <p>Eメール {{ groups.find(group => group.id === current_group).email }}</p> -->
+                <!-- <p>営業時間: {{ groups.find(group => group.id === current_group).hours }}</p> -->
+                </div>
+                <ul class="profile-list">
+                    <li v-for="(profile, index) in ownGroupProfiles" :key="index" class="profile-item">
+                        <div class="profile-info">
+                            <h2>{{ profile.name }}</h2>
+                            <p>{{ profile.bio }}</p>
+                            <p>グループ: {{ profile.group }}</p>
+                            <p>ステータス: 
+                                <label>
+                                    <input type="radio" v-model="profile.status" :value="'OK'"> OK
+                                </label>
+                                <label>
+                                    <input type="radio" v-model="profile.status" :value="'NG'"> NG
+                                </label>
+                            </p>
+                        </div>
+                        <button @click="profiles_delete(profile.id)">削除</button>
+                    </li>
+                </ul>
+            </div>
         </div>
-      
-        <!-- コンテンツ -->
-        <div class="content">
-          <div class="requested-que_block" v-show="currentBlock === 'requested-que_block'">
-            <h3>リクエストされたプロフィール</h3>
-            <!-- リクエスト一覧の内容 -->
-          </div>
-      
-          <div class="input-for-group_block" v-show="currentBlock === 'input-for-group_block'">
-            <h3>グループ作成</h3>
-            <!-- グループ作成フォーム -->
-          </div>
-      
-          <div class="id_pass_block" v-show="currentBlock === 'id_pass_block'">
-            <h3>IDとパスワード</h3>
-            <!-- IDとパスワード入力フォーム -->
-          </div>
-      
-          <div class="input-for-profile_block" v-show="currentBlock === 'input-for-profile_block'">
-            <h3>プロフィール作成</h3>
-            <!-- プロフィール作成フォーム -->
-          </div>
-        </div>
-      </div>
+    </div>
+</div>
+
+</div>
 <script>
 const app = Vue.createApp({
     data() {
@@ -408,9 +245,6 @@ const app = Vue.createApp({
             current_group: '',
             isOpen: false,
             requestedProfiles: [],
-            isSidebarOpen: false, // サイドバーの開閉状態
-            currentBlock: 'requested-que_block', // 現在表示中の_block
-  
         };
     },
     mounted() {
@@ -708,7 +542,7 @@ const app = Vue.createApp({
             return await fetch(this.endpoint_url + Endpoint, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'applicatio_bぉckn/json'
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(Body_json_str_obj)
             });
@@ -727,9 +561,6 @@ const app = Vue.createApp({
             }
         },
             
-    toggleSidebar() {
-      this.isSidebarOpen = !this.isSidebarOpen;
-    },
     },
     watch: {
         current_group() {
