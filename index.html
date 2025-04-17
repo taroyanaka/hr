@@ -1,173 +1,561 @@
 <!DOCTYPE html>
+<!-- 必要な変更点 -->
+(3最適化早すぎ問題。顧客のニーズと俺の頭の中のギャップを作らないようにする。まずコミュってニーズ聞き出して持っていく)
+
+リクエストを送信に紐付けて実装。
+=>おおまかに完了
+
+CRUDの一通りの流れをサンプルデータ使わずに可能かチェック
+=> 大まかにoK
+
+許諾の流れも実装する
+    許諾依頼のメール送信大体作ったから動かしてデバッグ
+=> だいたいOK
+
+=>サーバーのコードを本番環境に乗せる
+    dbファイルを.dataディレクトリに置いて外部に見えないことを確認の上実装。
+    完了
+        glitch.comのnode.jsのバージョンがアプデされてないため
+        ※cotton-concrete-catsupのpackage.jsonからnode moduleの古いver
+        (動くことを別アプリで確認済み)指定で動かした
+
+以上の機能実装(登録、リクエストメール送信)まで完了したらデザイン適当にタブ分け
+=> OK
+
+ID/PASS部分いじってる(連番のpassをランダム生成に)
+=> OK
+
+最低限のテストして実装フェーズ完了
+
+店舗に見せに行く(ついでに酒を飲んで遊んでくる)
+
+※gmailにspam扱いさてspamフォルダ行きになることあるの注意
+※リクエストテーブルへの追加(二重送信を回避したり他のリクエストとバッティングを防ぐためのテーブル)
+ についてはペンディング
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>insert link</title>
-<script src="./lib/profiles_data.js"></script>
-<script src="./lib/firebasejs_8.6.1_firebase-app.js"></script>
-<script src="./lib/firebasejs_8.4.0_firebase-auth.js"></script>
+<title>hr share</title>
+<!-- <script src="./lib/profiles_data.js"></script> -->
+<!-- <script src="./lib/firebasejs_8.6.1_firebase-app.js"></script> -->
+<!-- <script src="./lib/firebasejs_8.4.0_firebase-auth.js"></script> -->
+
+
+
+
+
 <script src="./lib/vue@3.5.13.global.prod.js"></script>
+<script src="./lib/validation.js"></script>
+
+
+<script type="module" src="./lib/validation.js"></script>
 <link rel="stylesheet" href="./lib/reset.css">
-<link rel="stylesheet" href="./lib/index.css">
+<!-- <link rel="stylesheet" href="./lib/index.css"> -->
 <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" />
+<style>
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.header_block {
+    padding: 0 0;
+    text-align: center;
+}
+
+.top-button {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    margin: 0px;
+}
+
+.top-button button {
+    border: none;
+    padding: 15px 30px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.side_bar {
+    width: 250px;
+    float: left;
+    height: 100vh;
+    padding: 20px;
+}
+
+.side_bar .tablinks {
+    display: block;
+    padding: 15px;
+    text-align: left;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.content_block {
+}
+
+.content_block h3 {
+    margin-bottom: 20px;
+}
+
+.content_block ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.content_block li {
+    margin: 15px 0;
+    padding: 15px;
+    border: 1px solid;
+    border-radius: 5px;
+}
+
+.content_block button {
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.login h1, .login h2 {
+    margin-bottom: 20px;
+}
+
+.login input[type="button"] {
+    border: none;
+    padding: 15px 30px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.insert form {
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+.insert label {
+    display: block;
+    margin-bottom: 15px;
+}
+
+.insert textarea {
+    width: 100%;
+    height: 300px;
+    border: 1px solid;
+    border-radius: 5px;
+}
+
+.insert .form-row {
+    display: flex;
+    justify-content_block: space-between;
+    margin-bottom: 20px;
+}
+
+.insert .form-row label {
+    flex: 1;
+}
+
+.insert button.submit {
+    border: none;
+    padding: 15px 30px;
+    cursor: pointer;
+}
+
+.submit {
+    position: fixed;
+    top: 0;
+    right: 10rem;
+}
+
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: -250px; /* 左から右に変更 */
+    width: 250px;
+    height: 100%;
+    padding: 20px;
+    transition: right 0.3s ease-in-out; /* left を right に変更 */
+    background-color: #f4f4f4;
+}
+
+.sidebar.open {
+    right: 0; /* 左から右に変更 */
+}
+
+.sidebar .close-button {
+    position: absolute;
+    top: 10px;
+    left: 10px; /* 右側に配置する場合は left を使用 */
+    font-size: 24px;
+    border: none;
+    cursor: pointer;
+}
+
+.sidebar h2 {
+    margin-bottom: 20px;
+}
+
+.sidebar ul {
+    list-style: none;
+}
+
+.sidebar ul li {
+    margin: 15px 0;
+}
+
+.sidebar ul li a {
+    text-decoration: none;
+    display: block;
+    padding: 15px;
+}
+
+.content_block {
+    margin: 20px;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+}
+
+.menu-buttons .tablinks {
+    margin-bottom: 10px;
+}
+
+.content_block button {
+    font-size: 0.5em;
+    text-decoration: underline;
+    border: none;
+    cursor: pointer;
+}
+
+.home-button {
+    border: none;
+    font-size: 3rem;
+    cursor: pointer;
+    margin-bottom: 20px;
+    margin-right: 2rem;
+}
+
+.clear_filters_div {
+    margin-top: 0.5rem;
+}
+
+.preview {
+    position: fixed;
+    top: 0;
+    right: 20rem;
+}
+
+.preview-line {
+    margin: 0.5rem 1rem;
+    padding: 0.5rem;
+}
+
+.black-button {
+    border: none;
+    padding: 15px 30px;
+    cursor: pointer;
+    margin-bottom: 10px;
+}
+
+.profile-columns {
+    display: flex;
+    gap: 20px;
+}
+
+.profile-column {
+    flex: 1;
+}
+
+.profile-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.profile-item {
+    display: flex;
+    align-items: center;
+    justify-content_block: space-between;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.profile-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.like-button, .dislike-button, .toggle-status-button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* readonlyはグレーアウトする */
+input[readonly] {
+    background-color: gray;
+}
+
+</style>
 </head>
 <body>
 <div id="app">
-<header class="header">
+      
+<header class="header_block">
+
     <div class="top-button">
-        <a href="./b_p.html" class="home-button">
-            <span class="material-icons">home</span>
-        </a>
+    <button @click="toggleSidebar">メニュー</button>
     </div>
 </header>
+    <div class="sidebar" :class="{ open: isSidebarOpen }">
+        <button class="close-button" @click="toggleSidebar">×</button>
+        <h2>メニュー</h2>
+        
+        <ul>
+        <li><button @click="currentBlock = 'content_block'">メイン画面</button></li>
+        <!-- <li><button @click="currentBlock = 'input-for-profile_block'">従業員追加</button></li> -->
 
-<div class="sidebar" :class="{ open: is_sidebar_open }" @click="toggle_sidebar">
-    <button @click.stop="toggle_sidebar" class="close-button">
-        <span class="material-icons">close</span>
-    </button>
-    <h2>Menu</h2>
-
-    <div>login
-        <h2>{{ login_result }}</h2>
-        <button v-if="!logged_in" @click="google_sign_in">sing_in</button>
+        <li><button @click="currentBlock = 'input-for-group_block'">サイト管理人専用画面</button></li>
+        </ul>
     </div>
+      
+<div class="all">
+          <!-- <div class="requested-que_block" v-show="currentBlock === 'requested-que_block'">
+            <button @click="deleteAllRequests">リクエスト削除</button>
+            <h3>リクエストされたプロフィール</h3>
+            <ul>
+            <li v-for="profile in requestedProfiles" :key="profile.id">
+                <div class="profile-info">
+                    <p>グループID: {{ profile.group_id }}</p>
+                    <p>プロフィールID: {{ profile.profile_id }}</p>
+                    <p>リクエスト元グループID: {{ profile.group_id_from }}</p>
+                    <p>リクエスト日時: {{ new Date(profile.created_at).toLocaleString() }}</p>
+                </div>
+            </li>
+            </ul>
+          </div> -->
+      
+          <div class="input-for-group_block" v-show="currentBlock === 'input-for-group_block'">
+            <h3>サイト管理人専用画面</h3>
+            <form @submit.prevent="createGroup">
+                <label for="new-group-name">新しいグループ名:</label>
+                <input type="text" id="new-group-name" v-model="newGroupName">
+                <label for="new-group-detail">詳細:</label>
+                <input type="text" id="new-group-detail" v-model="newGroupdetail">
+                <label for="new-group-email">Eメール:</label>
+                <input type="email" id="new-group-email" v-model="newGroupEmail">
+        
+                <label for="group-password">adminパスワード:</label>
+                <input type="password" id="group-password" v-model="groupPassword" autocomplete="current-password">
+                <button type="submit">グループ作成</button>
+            </form>
+          </div>
+            
 
-    <div class="menu-buttons" @click.stop>
-    </div>
+          <div class="content_block" v-show="currentBlock === 'content_block'">
+            <div v-show="current_tab === 'dev'" class="all_data">
+                <div class="id_pass_form">
+                    <h3>IDとパスワード</h3>
 
-    <div v-if="uid && username">
-        <button @click="googleSignOut" class="signout-button">ログアウト</button>
-    </div>
-</div>
 
-<div class="requested-que">
-    <h3>リクエストされたプロフィール</h3>
-    <ul>
-        <li v-for="request in filteredRequestedProfiles" :key="request.id">
-            {{ request.name }} ({{ request.group }})
-            <button @click="respondToRequest(request, 'accept')">許可</button>
-            <button @click="respondToRequest(request, 'reject')">拒否</button>
-        </li>
-    </ul>
-</div>
+                
+                    グループのidとpasswordを入力してください
+                    <br>
+                    id:
+                    <input type="number" id="current_group" v-model="current_group">
+                        <!-- <button @click="current_group = 1">1</button> -->
+                        <!-- <button @click="current_group = 2">2</button> -->
+                        <!-- <button @click="current_group = 3">3</button> -->
+                
+                        password: <input type="password" id="password" v-model="password" autocomplete>
+                        <!-- check_id_passwordの実行ボタン -->
+                        <button @click="check_id_password" v-if="current_group && password">id/password認証</button>
 
-<div class="each_data content" @click="handle_outside_click">
-    <div v-show="current_tab === 'dev'" class="all_data">
-        <label for="group-select">カレントグループを選択:</label>
-        <select id="group-select" v-model="current_group">
-            <option v-for="group in groups" :value="group.id">{{ group.name }}</option>
-        </select>
-        <div class="profile-columns">
-            <div class="profile-column">
-                <h3>他のグループ</h3>
-                <ul class="profile-list">
-                    <li v-for="group in otherGroups" :key="group.id" class="profile-item">
-                        <div class="profile-info">
-                            <h2>{{ group.name }}</h2>
-                            <p>住所: {{ group.address }}</p>
-                            <p>営業時間: {{ group.hours }}</p>
-                            <p>所属するプロフィールの数: {{ groupProfilesCount(group.id) }}</p>
-                            <ul>
-                                <li v-for="profile in profiles.filter(profile => profile.group === group.id && profile.status === 'OK')" :key="profile.id">
-                                    {{ profile.name }},  {{ profile.bio }}
-                                </li>
-                            </ul>
 
-                            <p>
-                                <label>
-                                    <input type="checkbox" :checked="group.subscribe_from.includes(current_group)" @change="toggleSubscribe(group.id)">
-                                    サブスクライブ
-                                </label>
-                            </p>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-            <div class="profile-column">
-                <h3>自分のグループ</h3>
-                <ul class="profile-list">
-                    <li v-for="(profile, index) in ownGroupProfiles" :key="index" class="profile-item">
-                        <div class="profile-info">
-                            <h2>{{ profile.name }}</h2>
-                            <p>{{ profile.bio }}</p>
-                            <p>グループ: {{ profile.group }}</p>
-                            <p>ステータス: 
-                                <label>
-                                    <input type="radio" v-model="profile.status" :value="'OK'"> OK
-                                </label>
-                                <label>
-                                    <input type="radio" v-model="profile.status" :value="'NG'"> NG
-                                </label>
-                            </p>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-            <div class="profile-column">
-                <h3>サブスクライブしたグループ</h3>
-                <ul class="profile-list">
-                    <li v-for="group in subscribedGroups" :key="group.id" class="profile-item">
-                        <div class="profile-info">
-                            <h2>{{ group.name }}</h2>
-                            <p>住所: {{ group.address }}</p>
-                            <p>営業時間: {{ group.hours }}</p>
-                            <p>所属するプロフィールの数: {{ groupProfilesCount(group.id) }}</p>
-                            <!-- group idが一致したprofile一覧を表示する -->
-                            <ul>
-                                <li v-for="profile in profiles.filter(profile => profile.group === group.id && profile.status === 'OK')" :key="profile.id">
-                                    {{ profile.name }},  {{ profile.bio }}
-                                    <button @click="requestProfile(profile)">リクエスト</button>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-                </ul>
-            </div>
+                        <!-- v-ifでidとpaswordの入力があれば表示 -->
+                            <div class="make_new_profile" v-if="id_pass_ok === true">
+                                <h3>プロフィール作成</h3>
+
+                                <div>
+                                    <label for="profile-name">プロフィール名:</label>
+                                    <input type="text" id="profile-name" v-model="newProfileName">
+                                </div>
+                                <div>
+                                    <label for="profile-bio">プロフィールの説明:</label>
+                                    <input type="text" id="profile-bio" v-model="newProfileBio">
+                                </div>
+                                <button @click="addProfile">プロフィール追加</button>
+                                <button @click="clearForm">クリア</button>
+                            </div>
+
+                </div>
+
+                <div class="profile-columns" v-if="id_pass_ok === true">
+                    <div class="profile-column">
+                        <h3>他のグループ</h3>
+                        <ul class="profile-list">
+                            <li v-for="group in otherGroups" :key="group.id" class="profile-item">
+                                <div class="profile-info">
+                                    <h2>{{ group.name }}</h2>
+                                    <p>詳細: {{ group.detail }}</p>
+                                    <!-- <p>Eメール: {{ group.email }}</p> -->
+                                        <div>
+                                          <button @click="toggle">
+                                            {{ isOpen ? '閉じる' : 'プロフィール一覧' }}
+                                          </button>
+                                      
+                                          <div v-if="isOpen">
+                                            <ul>
+                                                <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
+                                                    id:{{ profile.id }}, name:{{ profile.name }}, bio:{{ profile.bio }}
+                                                    <!-- <button @click="fetchRequestProfiles(profile.id)">リクエスト</button> -->
+                                                     <!-- isRequestedがtrueのものはクリックできないようにする -->
+        <!-- {{"group.id: "+ group.id}}
+        {{"profile.id: "+ profile.id}}
+        {{"requestedProfiles.group_id: "+ requestedProfiles[0].group_id}}
+        {{"requestedProfiles.profile_id: "+ requestedProfiles[0].profile_id}}
+        {{"requestedProfiles.group_id_from: "+ requestedProfiles[0].group_id_from}} -->
+        <button 
+          v-if="!requestedProfiles.some(request => request.profile_id === profile.id && request.group_id_from === current_group)" 
+          @click="fetchRequestProfiles(profile.id)"
+        >
+          リクエスト
+        </button>
+        <div>
+            <span v-if="requestedProfiles.some(request => request.profile_id === profile.id && request.group_id_from === current_group)">
+                リクエスト済み
+            </span>
         </div>
-    </div>
-</div>
-</div>
+                                                    <!-- <button @click="fetchRequestProfiles(profile.id)">リクエスト</button> -->
+                                                    
+        
+                                                </li>
+                                            </ul>        
+                                          </div>
+                                        </div>
+        
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="profile-column">
+                        <h3>自分のグループ</h3>
+                        <!-- カレントグループを表示 -->
+                         <div v-if="current_group">
+                        <h4>{{ groups.find(group => group.id === current_group).name }}</h4>
+                        <p>詳細: {{ groups.find(group => group.id === current_group).detail }}</p>
+                        <!-- <p>Eメール {{ groups.find(group => group.id === current_group).email }}</p> -->
+                        <!-- <p>営業時間: {{ groups.find(group => group.id === current_group).hours }}</p> -->
+                        </div>
+                        <ul class="profile-list">
+                            <li v-for="(profile, index) in ownGroupProfiles" :key="index" class="profile-item">
+                                <div class="profile-info">
+                                    <h2>{{ profile.name }}</h2>
+                                    <p>{{ profile.bio }}</p>
+                                    <p>グループ: {{ profile.group }}</p>
+                                    <p>ステータス: 
+                                        <label>
+                                            <input type="radio" v-model="profile.status" :value="'OK'"> OK
+                                        </label>
+                                        <label>
+                                            <input type="radio" v-model="profile.status" :value="'NG'"> NG
+                                        </label>
+                                    </p>
+                                </div>
+                                <button @click="profiles_delete(profile.id)">削除</button>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>        
+          </div>
 
+          <!-- <div class="input-for-profile_block" v-show="currentBlock === 'input-for-profile_block'">
+            <h3>プロフィール作成</h3>
+
+            <div>
+                <label for="profile-name">プロフィール名:</label>
+                <input type="text" id="profile-name" v-model="newProfileName">
+            </div>
+            <div>
+                <label for="profile-bio">プロフィールの説明:</label>
+                <input type="text" id="profile-bio" v-model="newProfileBio">
+            </div>
+            <button @click="addProfile">プロフィール追加</button>
+            <button @click="clearForm">クリア</button>
+          </div> -->
+
+
+</div>
+</div>
 <script>
 const app = Vue.createApp({
     data() {
         return {
-            is_sidebar_open: false,
+            id_pass_ok: false,
+            endpoint_url: 'http://localhost:3000/',
+            // endpoint_url: 'https://discreet-western-locust.glitch.me/',
+            to_email: '@gmail.com',
+            price: 1000,
+            // is_sidebar_open: false,
+            is_sidebar_open: true,
             username: '',
             uid: null,
             logged_in: false,
             login_result: '',
-            data1: '',
-            data2: '',
-            error_message: '',
-            success_message: '',
-            user: null,
-            password: '',
-            enpnt: 'https://cotton-concrete-catsup.glitch.me',
-            user_links: [],
-            all_links: [],
-            current_tab: 'dev', // 現在のタブを管理する変数
-            has_errors: true,
-            sort_key: 'created_at', // ソートキー
-            sort_order: 'desc', // ソート順を降順に設定
-            search_query: '', // 検索クエリ
-            show_preview: false, // プレビュー表示のフラグ
-            preview_data: [],
-            current_group: 'a', // カレントグループ
-            profiles: profiles_data,
-            groups: groups_data,
-            requestedProfiles: [], // リクエストされたプロフィール
+            current_tab: 'dev',
+            newProfileName: '',
+            newProfileBio: '',
+            newGroupName: '',
+            newGroupdetail: '',
+            newGroupEmail: 'touroku_meado@gmail.com',
+            groupPassword: '',
+            // password: '',
+            password: 'pass1',
+            profiles: [],
+            groups: [],
+            current_group: '',
+            isOpen: false,
+            requestedProfiles: [],
+            isSidebarOpen: false, // サイドバーの開閉状態
+            currentBlock: 'content_block', // 現在のブロック
+  
         };
     },
+    mounted() {
+        console.log(1);
+        this.fetchProfiles();
+        console.log(2);
+        this.fetchGroups();
+        console.log(3);
+        this.fetchAllRequest();
+        console.log(4);
+    },
+
+
+
     computed: {
         filteredProfiles() {
             return this.profiles.filter(profile => profile.group !== this.current_group);
         },
         ownGroupProfiles() {
-            return this.profiles.filter(profile => profile.group === this.current_group);
+            return this.profiles.filter(profile => profile.group_id === this.current_group);
         },
         subscribedGroups() {
             return this.groups.filter(group => group.subscribe_from.includes(this.current_group));
@@ -175,40 +563,347 @@ const app = Vue.createApp({
         otherGroups() {
             return this.groups.filter(group => group.id !== this.current_group);
         },
-        filteredRequestedProfiles() {
-            return this.requestedProfiles.filter(profile => profile.group === this.current_group);
-        }
     },
     methods: {
-        groupProfilesCount(groupId) {
-            return this.profiles.filter(profile => profile.group === groupId).length;
+        // 全部のリクエストを削除(開発用) /delete_all_requestsをgetでfetch
+        async deleteAllRequests() {
+            try {
+                const response = await fetch(this.endpoint_url+'delete_all_requests');
+                if (data.status !== 'OK') {
+                    console.error('Error:', data);
+                    alert('リクエストの削除に失敗しました');
+                    return;
+                }
+                const data = await response.json();
+                await fetchAllRequest();
+                alert('リクエストが正常に削除されました');
+            } catch (error) {
+                console.error('Error:', error);
+            }
         },
-        requestProfile(profile) {
-            // リクエストできたことをポップアップする
-            alert(`${profile.name}にリクエストを送信しました`);
-            this.requestedProfiles.push(profile);
-        },
-        respondToRequest(request, response) {
-            const message = response === 'accept' ? '許可のテンプレートメッセージ' : '拒否のテンプレートメッセージ';
-            alert(`${request.group}と${request.name}に${message}を送信しました`);
-            this.requestedProfiles = this.requestedProfiles.filter(p => p !== request);
-        },
-        toggleSubscribe(group_id) {
-            console.log(group_id);
-            const group = this.groups.find(group => group.id === group_id);
-            group.subscribe_from = group.subscribe_from.includes(this.current_group)
-                ? group.subscribe_from.filter(id => id !== this.current_group)
-                : [...group.subscribe_from, this.current_group];
 
-
+        // 全部のリクエストの取得
+        async fetchAllRequest() {
+            try {
+                const response = await fetch(this.endpoint_url+'all_requests');
+                const data = await response.json();
+                console.log(data);
+                this.requestedProfiles = data || [];
+            } catch (error) {
+                console.error('Error:', error);
+            }
         },
+
+        async fetchRequestProfiles(profile_id) {
+        try {
+            console.log('fetchRequestProfiles');
+            const data = await this.fetchRequestProfilesAPI(profile_id, this.current_group, this.password);
+            if (data.status !== 'OK') {
+                console.error('Error:', data);
+                alert('リクエストの取得に失敗しました');
+                return;
+            }
+        } catch (error) {
+            console.error('Error:', error);
+        }
+        },
+        async fetchRequestProfilesAPI(profile_id, group_id, password) {
+            try {
+                console.log('1 fetchRequestProfilesAPI');
+                const response = await this.fetch_post('request_profiles', {
+                    profile_id: profile_id,
+                    group_id: group_id,
+                    password: password
+                });
+                if (response.status !== 'OK') {
+                    console.error('Error:', response);
+                    throw new Error('Forbidden: Invalid credentials');
+                }
+                console.log('2 fetchRequestProfilesAPI');
+
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        toggle_sidebar() {
+            this.is_sidebar_open = !this.is_sidebar_open;
+        },
+        async addProfile() {
+        try {
+            const newProfile = {
+                name: this.newProfileName,
+                bio: this.newProfileBio,
+                group_id: this.current_group,
+                status: 'NG'
+            };
+
+            console.log(newProfile);
+            console.log("newProfile1");
+            if (validateProfile(this.newProfileName, this.newProfileBio, this.current_group) === false) {
+                console.log("newProfile2");
+                alert('プロフィールの入力が無効です');
+                return;
+            }
+            console.log("newProfile3");
+            const data = await this.addProfileAPI(newProfile, this.password);
+            console.log("newProfile4");
+            await this.fetchProfiles();
+            await this.fetchGroups();
+            console.log("newProfile5");
+            this.newProfileName = '';
+            this.newProfileBio = '';
+            console.log("newProfile6");
+            alert('プロフィールが正常に追加されました');
+        } catch (error) {
+            console.error('Error:', error);
+            alert('プロフィールの追加に失敗しました');
+        }
+        },
+        async createGroup() {
+            const existingGroups = this.groups.map(group => group.name);
+            // const newGroupHours = `${this.newGroupHoursStart} - ${this.newGroupHoursEnd}`;
+            const validationResult = validateGroup(this.newGroupName, existingGroups);            
+            if (validationResult === false) {
+                alert('グループの入力が無効です: ' + validationResult.join(', '));
+                return;
+            }
+            try {
+            const newGroup = {
+                name: this.newGroupName,
+                detail: this.newGroupdetail,
+                email: this.newGroupEmail,
+                subscribe: false,
+                subscribe_from: [],
+                password: this.groupPassword
+            };
+            console.log(this.password);
+            console.log(this.groupPassword);
+                // const data = await this.createGroupAPI(newGroup, this.password);
+                const data = await this.createGroupAPI(newGroup);
+                await this.fetchProfiles();
+                await this.fetchGroups();
+
+                this.newGroupName = '';
+                this.newGroupdetail = '';
+                this.newGroupEmail = '';
+                this.groupPassword = '';
+                alert('グループが正常に作成されました');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('グループの作成に失敗しました');
+            }
+        },
+        profiles_delete(profile_id) {
+            this.deleteProfileAPI(profile_id, this.current_group, this.password);
+        },
+        async fetchProfiles() {
+        try {
+            const data = await this.fetchProfilesAPI();
+            this.profiles = data;
+        } catch (error) {
+            console.error('Error:', error);
+        }
+        },
+        async fetchGroups() {
+        try {
+            const data = await this.fetchGroupsAPI();
+            this.groups = data;
+        } catch (error) {
+            console.error('Error:', error);
+        }
+        },
+        async updateGroup(group) {
+        try {
+            await this.updateGroupAPI(group, this.password);
+            alert('グループが正常に更新されました');
+        } catch (error) {
+            console.error('Error:', error);
+            alert('グループの更新に失敗しました');
+        }
+        },
+        async fetchInitialize() {
+        try {
+            await this.fetchInitializeAPI();
+            await this.fetchProfiles();
+            await this.fetchGroups();
+            alert('初期化が完了しました');
+        } catch (error) {
+            console.error('Error:', error);
+            alert('初期化に失敗しました');
+        }
+        },
+        clearForm() {
+            this.newProfileName = '';
+            this.newProfileBio = '';
+            },
+        test(){
+            this.testAPI();
+        },
+        async fetchProfilesAPI() {
+        try {
+            console.log('fetchProfilesAPI');
+            const response = await fetch(this.endpoint_url+'profiles');
+            return await response.json();
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
+        }
+        },
+        async fetchGroupsAPI() {
+        console.log('fetchGroupsAPI');
+        try {
+            const response = await fetch(this.endpoint_url+'groups');
+            return await response.json();
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
+        }
+        },
+        async addProfileAPI(newProfile, password) {
+        try {
+            console.log('addProfileAPI');
+            const response = await this.fetch_post('profiles', { ...newProfile, password });
+            if (!response.ok) {throw new Error(`HTTP error! status: ${response.status}`);};
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Error:', error);
+            throw error;
+        }
+        },
+        async createGroupAPI(newGroup) {
+            try {
+                const response = await this.fetch_post('create_groups', { ...newGroup });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async deleteProfileAPI(profile_id, group_id, password) {
+            try {
+                const response = await this.fetch_post('profiles/delete', { 
+                    profile_id: profile_id,
+                    group_id: group_id,
+                    password: password
+                });
+                if (response.status !== 'OK') {console.error('Error:', response);throw new Error('Forbidden: Invalid credentials')};
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async updateGroupAPI(group, password) {
+            try {
+                const group_id = group.id;
+                console.log(group_id);
+                const response = await this.fetch_post('groups/'+group.id, { ...group, group_id, password });
+                if (response.status !== 'OK') {console.error('Error:', response);throw new Error('Forbidden: Invalid credentials')}
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async fetchInitializeAPI() {
+            try {
+                const response = await fetch(this.endpoint_url+'initialize');
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+        async testAPI() {
+            try {
+                const response = await this.fetch_post('test');
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },        
+        toggle() {
+            this.isOpen = !this.isOpen
+        },
+        async fetch_post(Endpoint='profiles', Body_json_str_obj={ ...newProfile, password }) {
+            return await fetch(this.endpoint_url + Endpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(Body_json_str_obj)
+            });
+        },
+        // sendemailをPOSTでfetchする関数。req.body.toに送信先のメールアドレスの文字列を送る
+        async fetch_sendemail() {
+            try {
+                const response = await this.fetch_post('sendemail', { 
+                    to: this.to_email,
+                    price: this.price,
+                 });
+                return await response.json();
+            } catch (error) {
+                console.error('Error:', error);
+                throw error;
+            }
+        },
+            
+    toggleSidebar() {
+      this.isSidebarOpen = !this.isSidebarOpen;
     },
-    mounted() {
-        this.groups.forEach(group => {
-            group.subscribe = group.subscribe_from.includes(this.current_group);
-        });
+    // 以下のエンドポイントfetchして問題なければid_pass_okをtrueにする
+    // id_passをチェックしてvalidならstatus: OKを返すpostエンドポイント
+// app.post('/check_id_password', (req, res) => {
+//   try {
+//     const { group_id, password } = req.body;
+//     const isValid = check_group_password(group_id, password);
+//     if (isValid) {
+//       res.json({ status: 'OK' });
+//     } else {
+//       res.status(403).json({ message: 'Invalid group ID or password' });
+//     }
+//   } catch (error) {
+//     console.error('Error in check_id_password:', error);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// });
+async check_id_password() {
+        try {
+            const response = await this.fetch_post('check_id_password', {
+                group_id: this.current_group,
+                password: this.password
+            });
+            const data = await response.json();
+            if (data.status === 'OK') {
+                this.id_pass_ok = true;
+                alert('IDとパスワードが確認されました');
+            } else {
+                this.id_pass_ok = false;
+                alert('IDまたはパスワードが無効です');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('IDとパスワードの確認中にエラーが発生しました');
+        }
+},
+
+
+    
+    },
+    watch: {
+        current_group() {
+            this.clearForm();
+            this.groups.forEach(group => {
+                group.subscribe = group.subscribe_from.includes(this.current_group);
+            });
+        }
     }
 }).mount('#app');
+
 </script>
 </body>
 </html>
