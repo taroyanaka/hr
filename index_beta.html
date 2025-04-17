@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <!-- 必要な変更点 -->
-(111最適化早すぎ問題。顧客のニーズと俺の頭の中のギャップを作らないようにする。まずコミュってニーズ聞き出して持っていく)
+(3最適化早すぎ問題。顧客のニーズと俺の頭の中のギャップを作らないようにする。まずコミュってニーズ聞き出して持っていく)
 
 リクエストを送信に紐付けて実装。
 =>おおまかに完了
@@ -22,7 +22,10 @@ CRUDの一通りの流れをサンプルデータ使わずに可能かチェッ�
 以上の機能実装(登録、リクエストメール送信)まで完了したらデザイン適当にタブ分け
 => OK
 
-ID/PASS部分いじって(連番のpassをランダム生成に)最低限のテストして実装フェーズ完了
+ID/PASS部分いじってる(連番のpassをランダム生成に)
+=> OK
+
+最低限のテストして実装フェーズ完了
 
 店舗に見せに行く(ついでに酒を飲んで遊んでくる)
 
@@ -35,12 +38,19 @@ ID/PASS部分いじって(連番のpassをランダム生成に)最低限のテ�
 <meta charset="UTF-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>insert link</title>
+<title>hr share</title>
 <!-- <script src="./lib/profiles_data.js"></script> -->
 <!-- <script src="./lib/firebasejs_8.6.1_firebase-app.js"></script> -->
 <!-- <script src="./lib/firebasejs_8.4.0_firebase-auth.js"></script> -->
+
+
+
+
+
 <script src="./lib/vue@3.5.13.global.prod.js"></script>
 <script src="./lib/validation.js"></script>
+
+
 <script type="module" src="./lib/validation.js"></script>
 <link rel="stylesheet" href="./lib/reset.css">
 <!-- <link rel="stylesheet" href="./lib/index.css"> -->
@@ -306,7 +316,9 @@ input[readonly] {
 </head>
 <body>
 <div id="app">
+      
 <header class="header_block">
+
     <div class="top-button">
     <button @click="toggleSidebar">メニュー</button>
     </div>
@@ -314,9 +326,10 @@ input[readonly] {
     <div class="sidebar" :class="{ open: isSidebarOpen }">
         <button class="close-button" @click="toggleSidebar">×</button>
         <h2>メニュー</h2>
+        
         <ul>
         <li><button @click="currentBlock = 'content_block'">メイン画面</button></li>
-        <li><button @click="currentBlock = 'input-for-profile_block'">従業員追加</button></li>
+        <!-- <li><button @click="currentBlock = 'input-for-profile_block'">従業員追加</button></li> -->
 
         <li><button @click="currentBlock = 'input-for-group_block'">サイト管理人専用画面</button></li>
         </ul>
@@ -359,18 +372,41 @@ input[readonly] {
             <div v-show="current_tab === 'dev'" class="all_data">
                 <div class="id_pass_form">
                     <h3>IDとパスワード</h3>
+
+
+                
                     グループのidとpasswordを入力してください
                     <br>
                     id:
                     <input type="number" id="current_group" v-model="current_group">
-                        <button @click="current_group = 1">1</button>
-                        <button @click="current_group = 2">2</button>
-                        <button @click="current_group = 3">3</button>
+                        <!-- <button @click="current_group = 1">1</button> -->
+                        <!-- <button @click="current_group = 2">2</button> -->
+                        <!-- <button @click="current_group = 3">3</button> -->
                 
                         password: <input type="password" id="password" v-model="password" autocomplete>
+                        <!-- check_id_passwordの実行ボタン -->
+                        <button @click="check_id_password" v-if="current_group && password">id/password認証</button>
+
+
+                        <!-- v-ifでidとpaswordの入力があれば表示 -->
+                            <div class="make_new_profile" v-if="id_pass_ok === true">
+                                <h3>プロフィール作成</h3>
+
+                                <div>
+                                    <label for="profile-name">プロフィール名:</label>
+                                    <input type="text" id="profile-name" v-model="newProfileName">
+                                </div>
+                                <div>
+                                    <label for="profile-bio">プロフィールの説明:</label>
+                                    <input type="text" id="profile-bio" v-model="newProfileBio">
+                                </div>
+                                <button @click="addProfile">プロフィール追加</button>
+                                <button @click="clearForm">クリア</button>
+                            </div>
+
                 </div>
 
-                <div class="profile-columns">
+                <div class="profile-columns" v-if="id_pass_ok === true">
                     <div class="profile-column">
                         <h3>他のグループ</h3>
                         <ul class="profile-list">
@@ -450,7 +486,7 @@ input[readonly] {
             </div>        
           </div>
 
-          <div class="input-for-profile_block" v-show="currentBlock === 'input-for-profile_block'">
+          <!-- <div class="input-for-profile_block" v-show="currentBlock === 'input-for-profile_block'">
             <h3>プロフィール作成</h3>
 
             <div>
@@ -463,7 +499,7 @@ input[readonly] {
             </div>
             <button @click="addProfile">プロフィール追加</button>
             <button @click="clearForm">クリア</button>
-          </div>
+          </div> -->
 
 
 </div>
@@ -472,8 +508,9 @@ input[readonly] {
 const app = Vue.createApp({
     data() {
         return {
-            // endpoint_url: 'http://localhost:3000/',
-            endpoint_url: 'https://discreet-western-locust.glitch.me/',
+            id_pass_ok: false,
+            endpoint_url: 'http://localhost:3000/',
+            // endpoint_url: 'https://discreet-western-locust.glitch.me/',
             to_email: '@gmail.com',
             price: 1000,
             // is_sidebar_open: false,
@@ -818,6 +855,44 @@ const app = Vue.createApp({
     toggleSidebar() {
       this.isSidebarOpen = !this.isSidebarOpen;
     },
+    // 以下のエンドポイントfetchして問題なければid_pass_okをtrueにする
+    // id_passをチェックしてvalidならstatus: OKを返すpostエンドポイント
+// app.post('/check_id_password', (req, res) => {
+//   try {
+//     const { group_id, password } = req.body;
+//     const isValid = check_group_password(group_id, password);
+//     if (isValid) {
+//       res.json({ status: 'OK' });
+//     } else {
+//       res.status(403).json({ message: 'Invalid group ID or password' });
+//     }
+//   } catch (error) {
+//     console.error('Error in check_id_password:', error);
+//     res.status(500).json({ message: 'Internal server error' });
+//   }
+// });
+async check_id_password() {
+        try {
+            const response = await this.fetch_post('check_id_password', {
+                group_id: this.current_group,
+                password: this.password
+            });
+            const data = await response.json();
+            if (data.status === 'OK') {
+                this.id_pass_ok = true;
+                alert('IDとパスワードが確認されました');
+            } else {
+                this.id_pass_ok = false;
+                alert('IDまたはパスワードが無効です');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('IDとパスワードの確認中にエラーが発生しました');
+        }
+},
+
+
+    
     },
     watch: {
         current_group() {
@@ -828,6 +903,7 @@ const app = Vue.createApp({
         }
     }
 }).mount('#app');
+
 </script>
 </body>
 </html>
