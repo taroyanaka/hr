@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<!-- 必要な変更点 -->
-(3最適化早すぎ問題。顧客のニーズと俺の頭の中のギャップを作らないようにする。まずコミュってニーズ聞き出して持っていく)
+<!-- (5最適化早すぎ問題。顧客のニーズと俺の頭の中のギャップを作らないようにする。まずコミュってニーズ聞き出して持っていく)
 
 リクエストを送信に紐付けて実装。
 =>おおまかに完了
@@ -26,12 +25,13 @@ ID/PASS部分いじってる(連番のpassをランダム生成に)
 => OK
 
 最低限のテストして実装フェーズ完了
+=> OK
 
 店舗に見せに行く(ついでに酒を飲んで遊んでくる)
 
 ※gmailにspam扱いさてspamフォルダ行きになることあるの注意
 ※リクエストテーブルへの追加(二重送信を回避したり他のリクエストとバッティングを防ぐためのテーブル)
- についてはペンディング
+ についてはペンディング -->
 
 <html lang="en">
 <head>
@@ -352,6 +352,7 @@ input[readonly] {
           </div> -->
       
           <div class="input-for-group_block" v-show="currentBlock === 'input-for-group_block'">
+            <h1>Version 1.0.0</h1>
             <h3>サイト管理人専用画面</h3>
             <form @submit.prevent="createGroup">
                 <label for="new-group-name">新しいグループ名:</label>
@@ -365,6 +366,8 @@ input[readonly] {
                 <input type="password" id="group-password" v-model="groupPassword" autocomplete="current-password">
                 <button type="submit">グループ作成</button>
             </form>
+            <!-- button fetchInitialize -->
+            <button @click="fetchInitialize">初期化</button>
           </div>
             
 
@@ -390,17 +393,17 @@ input[readonly] {
 
                         <!-- v-ifでidとpaswordの入力があれば表示 -->
                             <div class="make_new_profile" v-if="id_pass_ok === true">
-                                <h3>プロフィール作成</h3>
+                                <h3>従業員登録</h3>
 
                                 <div>
-                                    <label for="profile-name">プロフィール名:</label>
+                                    <label for="profile-name">ニックネーム:</label>
                                     <input type="text" id="profile-name" v-model="newProfileName">
                                 </div>
                                 <div>
-                                    <label for="profile-bio">プロフィールの説明:</label>
+                                    <label for="profile-bio">職種やスキルなど:</label>
                                     <input type="text" id="profile-bio" v-model="newProfileBio">
                                 </div>
-                                <button @click="addProfile">プロフィール追加</button>
+                                <button @click="addProfile">登録</button>
                                 <button @click="clearForm">クリア</button>
                             </div>
 
@@ -471,10 +474,14 @@ input[readonly] {
                                     <p>グループ: {{ profile.group }}</p>
                                     <p>ステータス: 
                                         <label>
-                                            <input type="radio" v-model="profile.status" :value="'OK'"> OK
+                                            <!-- <input type="radio" v-model="profile.status" :value="'OK'"> OK -->
+                                             <!-- updateProfileで変更する -->
+                                            <input type="radio" v-model="profile.status" :value="'OK'" @change="updateProfile(profile)">OK
                                         </label>
                                         <label>
-                                            <input type="radio" v-model="profile.status" :value="'NG'"> NG
+                                            <!-- <input type="radio" v-model="profile.status" :value="'NG'"> NG -->
+                                            <input type="radio" v-model="profile.status" :value="'NG'" @change="updateProfile(profile)">NG
+
                                         </label>
                                     </p>
                                 </div>
@@ -486,21 +493,6 @@ input[readonly] {
             </div>        
           </div>
 
-          <!-- <div class="input-for-profile_block" v-show="currentBlock === 'input-for-profile_block'">
-            <h3>プロフィール作成</h3>
-
-            <div>
-                <label for="profile-name">プロフィール名:</label>
-                <input type="text" id="profile-name" v-model="newProfileName">
-            </div>
-            <div>
-                <label for="profile-bio">プロフィールの説明:</label>
-                <input type="text" id="profile-bio" v-model="newProfileBio">
-            </div>
-            <button @click="addProfile">プロフィール追加</button>
-            <button @click="clearForm">クリア</button>
-          </div> -->
-
 
 </div>
 </div>
@@ -509,8 +501,8 @@ const app = Vue.createApp({
     data() {
         return {
             id_pass_ok: false,
-            // endpoint_url: 'http://localhost:3000/',
-            endpoint_url: 'https://discreet-western-locust.glitch.me/',
+            endpoint_url: 'http://localhost:3000/',
+            // endpoint_url: 'https://discreet-western-locust.glitch.me/',
             to_email: '@gmail.com',
             price: 1000,
             // is_sidebar_open: false,
@@ -524,10 +516,10 @@ const app = Vue.createApp({
             newProfileBio: '',
             newGroupName: '',
             newGroupdetail: '',
-            newGroupEmail: 'touroku_meado@gmail.com',
+            newGroupEmail: '@gmail.com',
             groupPassword: '',
             // password: '',
-            password: 'pass1',
+            password: '',
             profiles: [],
             groups: [],
             current_group: '',
@@ -661,6 +653,17 @@ const app = Vue.createApp({
             alert('プロフィールの追加に失敗しました');
         }
         },
+        // async updateProfileAPI(profile) {を実行する関数
+        async updateProfile(profile) {
+            try {
+                await this.updateProfileAPI(profile);
+                alert('プロフィールが正常に更新されました');
+            } catch (error) {
+                console.error('Error:', error);
+                alert('プロフィールの更新に失敗しました');
+            }
+        },
+
         async createGroup() {
             const existingGroups = this.groups.map(group => group.name);
             // const newGroupHours = `${this.newGroupHoursStart} - ${this.newGroupHoursEnd}`;
@@ -724,6 +727,7 @@ const app = Vue.createApp({
         }
         },
         async fetchInitialize() {
+        if (confirm('初期化しますか？')) {
         try {
             await this.fetchInitializeAPI();
             await this.fetchProfiles();
@@ -732,7 +736,7 @@ const app = Vue.createApp({
         } catch (error) {
             console.error('Error:', error);
             alert('初期化に失敗しました');
-        }
+        }}
         },
         clearForm() {
             this.newProfileName = '';
@@ -751,6 +755,31 @@ const app = Vue.createApp({
             throw error;
         }
         },
+        // 以下のエンドポイントをfetchする関数
+// app.post('/update_profiles', (req, res) => {
+//   const { id, name, bio, group_id, status, password } = req.body;
+async updateProfileAPI(profile) {
+    try {
+        const response = await this.fetch_post('update_profiles', {
+            id: profile.id,
+            name: profile.name,
+            bio: profile.bio,
+            group_id: profile.group_id,
+            status: profile.status,
+            password: this.password
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+},
+
+
         async fetchGroupsAPI() {
         console.log('fetchGroupsAPI');
         try {
@@ -855,22 +884,6 @@ const app = Vue.createApp({
     toggleSidebar() {
       this.isSidebarOpen = !this.isSidebarOpen;
     },
-    // 以下のエンドポイントfetchして問題なければid_pass_okをtrueにする
-    // id_passをチェックしてvalidならstatus: OKを返すpostエンドポイント
-// app.post('/check_id_password', (req, res) => {
-//   try {
-//     const { group_id, password } = req.body;
-//     const isValid = check_group_password(group_id, password);
-//     if (isValid) {
-//       res.json({ status: 'OK' });
-//     } else {
-//       res.status(403).json({ message: 'Invalid group ID or password' });
-//     }
-//   } catch (error) {
-//     console.error('Error in check_id_password:', error);
-//     res.status(500).json({ message: 'Internal server error' });
-//   }
-// });
 async check_id_password() {
         try {
             const response = await this.fetch_post('check_id_password', {
@@ -903,6 +916,18 @@ async check_id_password() {
         }
     }
 }).mount('#app');
+
+// test関数(idに1を代入、passwordにpass1を代入)を実行
+function test() {
+    const testData = {
+        group_id: 1,
+        password: 'pass1'
+    };
+    app.current_group = testData.group_id;
+    app.password = testData.password;
+
+    app.check_id_password();
+}
 
 </script>
 </body>
