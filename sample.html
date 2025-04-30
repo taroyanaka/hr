@@ -318,39 +318,31 @@ input[readonly] {
 <div id="app">
       
 <header class="header_block">
-
+ver 0.6
     <div class="top-button">
+        test2 <button @click="test2">test2</button>
+        test3 <button @click="test3">test3</button>
+        test4 <button @click="test4">test4</button>
+        afaでメール確認
+        acaへ返信
+        acaでメール確認
+        test5 <button @click="test5">test5</button>
+
     <button @click="toggleSidebar">メニュー</button>
     </div>
 </header>
     <div class="sidebar" :class="{ open: isSidebarOpen }">
         <button class="close-button" @click="toggleSidebar">×</button>
+
         <h2>メニュー</h2>
         
         <ul>
         <li><button @click="currentBlock = 'content_block'">メイン画面</button></li>
-        <!-- <li><button @click="currentBlock = 'input-for-profile_block'">従業員追加</button></li> -->
-
         <li><button @click="currentBlock = 'input-for-group_block'">サイト管理人専用画面</button></li>
         </ul>
     </div>
       
-<div class="all">
-          <!-- <div class="requested-que_block" v-show="currentBlock === 'requested-que_block'">
-            <button @click="deleteAllRequests">リクエスト削除</button>
-            <h3>リクエストされたプロフィール</h3>
-            <ul>
-            <li v-for="profile in requestedProfiles" :key="profile.id">
-                <div class="profile-info">
-                    <p>グループID: {{ profile.group_id }}</p>
-                    <p>プロフィールID: {{ profile.profile_id }}</p>
-                    <p>リクエスト元グループID: {{ profile.group_id_from }}</p>
-                    <p>リクエスト日時: {{ new Date(profile.created_at).toLocaleString() }}</p>
-                </div>
-            </li>
-            </ul>
-          </div> -->
-      
+<div class="all">      
           <div class="input-for-group_block" v-show="currentBlock === 'input-for-group_block'">
             <h1>Version 1.0.1</h1>
             <h3>サイト管理人専用画面</h3>
@@ -366,7 +358,6 @@ input[readonly] {
                 <input type="password" id="group-password" v-model="groupPassword" autocomplete="current-password">
                 <button type="submit">グループ作成</button>
             </form>
-            <!-- button fetchInitialize -->
             <button @click="fetchInitialize">初期化</button>
           </div>
             
@@ -382,19 +373,10 @@ input[readonly] {
                     <br>
                     id:
                     <input type="number" id="current_group" v-model="current_group">
-                        <!-- <button @click="current_group = 1">1</button> -->
-                        <!-- <button @click="current_group = 2">2</button> -->
-                        <!-- <button @click="current_group = 3">3</button> -->
-                
                         password: <input type="password" id="password" v-model="password" autocomplete>
-                        <!-- check_id_passwordの実行ボタン -->
                         <button @click="check_id_password" v-if="current_group && password">id/password認証</button>
-
-
-                        <!-- v-ifでidとpaswordの入力があれば表示 -->
                             <div class="make_new_profile" v-if="id_pass_ok === true">
                                 <h3>従業員登録</h3>
-
                                 <div>
                                     <label for="profile-name">ニックネーム:</label>
                                     <input type="text" id="profile-name" v-model="newProfileName">
@@ -417,7 +399,6 @@ input[readonly] {
                                 <div class="profile-info">
                                     <h2>{{ group.name }}</h2>
                                     <p>詳細: {{ group.detail }}</p>
-                                    <!-- <p>Eメール: {{ group.email }}</p> -->
                                         <div>
                                           <button @click="toggle">
                                             {{ isOpen ? '閉じる' : 'プロフィール一覧' }}
@@ -427,13 +408,6 @@ input[readonly] {
                                             <ul>
                                                 <li v-for="profile in profiles.filter(profile => profile.group_id === group.id && profile.status === 'OK')" :key="profile.id">
                                                     id:{{ profile.id }}, name:{{ profile.name }}, bio:{{ profile.bio }}
-                                                    <!-- <button @click="fetchRequestProfiles(profile.id)">リクエスト</button> -->
-                                                     <!-- isRequestedがtrueのものはクリックできないようにする -->
-        <!-- {{"group.id: "+ group.id}}
-        {{"profile.id: "+ profile.id}}
-        {{"requestedProfiles.group_id: "+ requestedProfiles[0].group_id}}
-        {{"requestedProfiles.profile_id: "+ requestedProfiles[0].profile_id}}
-        {{"requestedProfiles.group_id_from: "+ requestedProfiles[0].group_id_from}} -->
         <button 
           v-if="!requestedProfiles.some(request => request.profile_id === profile.id && request.group_id_from === current_group)" 
           @click="fetchRequestProfiles(profile.id)"
@@ -445,9 +419,6 @@ input[readonly] {
                 リクエスト済み
             </span>
         </div>
-                                                    <!-- <button @click="fetchRequestProfiles(profile.id)">リクエスト</button> -->
-                                                    
-        
                                                 </li>
                                             </ul>        
                                           </div>
@@ -459,12 +430,9 @@ input[readonly] {
                     </div>
                     <div class="profile-column">
                         <h3>自分のグループ</h3>
-                        <!-- カレントグループを表示 -->
                          <div v-if="current_group">
                         <h4>{{ groups.find(group => group.id === current_group).name }}</h4>
                         <p>詳細: {{ groups.find(group => group.id === current_group).detail }}</p>
-                        <!-- <p>Eメール {{ groups.find(group => group.id === current_group).email }}</p> -->
-                        <!-- <p>営業時間: {{ groups.find(group => group.id === current_group).hours }}</p> -->
                         </div>
                         <ul class="profile-list">
                             <li v-for="(profile, index) in ownGroupProfiles" :key="index" class="profile-item">
@@ -474,14 +442,10 @@ input[readonly] {
                                     <p>グループ: {{ profile.group }}</p>
                                     <p>ステータス: 
                                         <label>
-                                            <!-- <input type="radio" v-model="profile.status" :value="'OK'"> OK -->
-                                             <!-- updateProfileで変更する -->
                                             <input type="radio" v-model="profile.status" :value="'OK'" @change="updateProfile(profile)">OK
                                         </label>
                                         <label>
-                                            <!-- <input type="radio" v-model="profile.status" :value="'NG'"> NG -->
                                             <input type="radio" v-model="profile.status" :value="'NG'" @change="updateProfile(profile)">NG
-
                                         </label>
                                     </p>
                                 </div>
@@ -544,20 +508,23 @@ const app = Vue.createApp({
 
     computed: {
         filteredProfiles() {
+            console.log('filteredProfiles');
             return this.profiles.filter(profile => profile.group !== this.current_group);
         },
         ownGroupProfiles() {
+            console.log('ownGroupProfiles');
             return this.profiles.filter(profile => profile.group_id === this.current_group);
         },
         subscribedGroups() {
+            console.log('subscribedGroups');
             return this.groups.filter(group => group.subscribe_from.includes(this.current_group));
         },
         otherGroups() {
+            console.log('otherGroups');
             return this.groups.filter(group => group.id !== this.current_group);
         },
     },
     methods: {
-        // 全部のリクエストを削除(開発用) /delete_all_requestsをgetでfetch
         async deleteAllRequests() {
             try {
                 const response = await fetch(this.endpoint_url+'delete_all_requests');
@@ -568,13 +535,10 @@ const app = Vue.createApp({
                 }
                 const data = await response.json();
                 await fetchAllRequest();
-                alert('リクエストが正常に削除されました');
             } catch (error) {
                 console.error('Error:', error);
             }
         },
-
-        // 全部のリクエストの取得
         async fetchAllRequest() {
             try {
                 const response = await fetch(this.endpoint_url+'all_requests');
@@ -653,7 +617,6 @@ const app = Vue.createApp({
             alert('プロフィールの追加に失敗しました');
         }
         },
-        // async updateProfileAPI(profile) {を実行する関数
         async updateProfile(profile) {
             try {
                 await this.updateProfileAPI(profile);
@@ -666,7 +629,6 @@ const app = Vue.createApp({
 
         async createGroup() {
             const existingGroups = this.groups.map(group => group.name);
-            // const newGroupHours = `${this.newGroupHoursStart} - ${this.newGroupHoursEnd}`;
             const validationResult = validateGroup(this.newGroupName, existingGroups);            
             if (validationResult === false) {
                 alert('グループの入力が無効です: ' + validationResult.join(', '));
@@ -683,7 +645,6 @@ const app = Vue.createApp({
             };
             console.log(this.password);
             console.log(this.groupPassword);
-                // const data = await this.createGroupAPI(newGroup, this.password);
                 const data = await this.createGroupAPI(newGroup);
                 await this.fetchProfiles();
                 await this.fetchGroups();
@@ -698,9 +659,28 @@ const app = Vue.createApp({
                 alert('グループの作成に失敗しました');
             }
         },
-        profiles_delete(profile_id) {
-            this.deleteProfileAPI(profile_id, this.current_group, this.password);
-        },
+async profiles_delete(profile_id) {
+    try {
+        console.log("profile_id, this.current_group, this.password");
+        console.log(profile_id, this.current_group, this.password);
+        const data = await this.deleteProfileAPI(profile_id, this.current_group, this.password);
+        
+        console.log("1 data", data);
+        // profilesを再代入してリアクティブシステムに変更を通知
+        this.profiles = data;
+        console.log("2 this.profiles", this.profiles);
+        
+        // 必要に応じて他のデータも再取得
+        await this.fetchProfiles();
+        await this.fetchGroups();
+        await this.fetchAllRequest();
+
+        alert('プロフィールが正常に削除されました');
+    } catch (error) {
+        console.error('Error:', error);
+        alert('プロフィールの削除に失敗しました');
+    }
+},
         async fetchProfiles() {
         try {
             const data = await this.fetchProfilesAPI();
@@ -742,9 +722,6 @@ const app = Vue.createApp({
             this.newProfileName = '';
             this.newProfileBio = '';
             },
-        test(){
-            this.testAPI();
-        },
         async fetchProfilesAPI() {
         try {
             console.log('fetchProfilesAPI');
@@ -755,9 +732,6 @@ const app = Vue.createApp({
             throw error;
         }
         },
-        // 以下のエンドポイントをfetchする関数
-// app.post('/update_profiles', (req, res) => {
-//   const { id, name, bio, group_id, status, password } = req.body;
 async updateProfileAPI(profile) {
     try {
         const response = await this.fetch_post('update_profiles', {
@@ -818,7 +792,8 @@ async updateProfileAPI(profile) {
                     group_id: group_id,
                     password: password
                 });
-                if (response.status !== 'OK') {console.error('Error:', response);throw new Error('Forbidden: Invalid credentials')};
+                console.log(response);
+                if (response.ok !== true) {console.error('Error:', response);throw new Error('Forbidden: Invalid credentials')};
                 return await response.json();
             } catch (error) {
                 console.error('Error:', error);
@@ -846,15 +821,6 @@ async updateProfileAPI(profile) {
                 throw error;
             }
         },
-        async testAPI() {
-            try {
-                const response = await this.fetch_post('test');
-                return await response.json();
-            } catch (error) {
-                console.error('Error:', error);
-                throw error;
-            }
-        },        
         toggle() {
             this.isOpen = !this.isOpen
         },
@@ -867,7 +833,6 @@ async updateProfileAPI(profile) {
                 body: JSON.stringify(Body_json_str_obj)
             });
         },
-        // sendemailをPOSTでfetchする関数。req.body.toに送信先のメールアドレスの文字列を送る
         async fetch_sendemail() {
             try {
                 const response = await this.fetch_post('sendemail', { 
@@ -903,6 +868,50 @@ async check_id_password() {
             alert('IDとパスワードの確認中にエラーが発生しました');
         }
 },
+async test1() {
+    await this.testAPI()
+},
+async testAPI() {
+    try {
+        const response = await this.fetch_post('test');
+        return await response.json();
+    } catch (error) {
+        console.error('Error:', error);
+        throw error;
+    }
+},
+// test2 id/passに入力して認証ボタンを実行
+async test2() {
+    this.current_group = 1;
+    this.password = 'pass1';
+    await this.check_id_password();
+},
+// test3 ニックネームと職種を入力して登録ボタンを実行
+async test3() {
+    this.newProfileName = '佐藤';
+    this.newProfileBio = 'ウェイター';
+    await this.addProfile();
+},
+// test4 プロフィール一覧を表示 最初のプロフィールをリクエスト
+async test4() {
+    if (this.profiles.length > 0) {
+        const firstProfile = this.profiles[0];
+        await this.fetchRequestProfiles(firstProfile.id);
+        alert(`リクエストを送信しました: ${firstProfile.name}`);
+    } else {
+        alert('プロフィールがありません');
+    }
+},
+// test5 プロフィールを削除
+async test5() {
+    console.log("test5");
+    const firstProfile = this.ownGroupProfiles[0];
+    console.log("firstProfile.id", firstProfile.id);
+    await this.profiles_delete(firstProfile.id);
+
+},
+
+
 
 
     
@@ -917,17 +926,6 @@ async check_id_password() {
     }
 }).mount('#app');
 
-// test関数(idに1を代入、passwordにpass1を代入)を実行
-function test() {
-    const testData = {
-        group_id: 1,
-        password: 'pass1'
-    };
-    app.current_group = testData.group_id;
-    app.password = testData.password;
-
-    app.check_id_password();
-}
 
 </script>
 </body>
