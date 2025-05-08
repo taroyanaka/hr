@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>レンタルサービス</title>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 1rem; }
+    input, button, select { margin: 0.2rem; padding: 0.5rem; }
+    .section { border: 1px solid #ccc; padding: 1rem; margin-bottom: 1rem; }
+    h2 { margin-top: 0; }
+  </style>
+</head>
+<body>
+<div id="app">
+    <div class="section">
+      <h2>ログイン</h2>
+      <input v-model="login.username" placeholder="ユーザー名">
+      <input v-model="login.password" type="password" placeholder="パスワード">
+      <button @click="loginUser">ログイン</button>
+      <button @click="registerUser">登録</button>
+      <p v-if="currentUser">ログイン中: {{ currentUser.username }}</p>
+    </div>
+
+    <div class="section" v-if="currentUser && login_ok">
+      <h2>アイテム登録</h2>
+      <input v-model="newItemName" placeholder="アイテム名">
+      <button @click="addItem">登録</button>
+      <ul>
+        <li v-for="item in items" :key="item.id">{{ item.name }} (ID: {{ item.id }})</li>
+      </ul>
+    </div>
+
+    <div class="section" v-if="currentUser && users.length > 0  && login_ok">
+      <h2>レンタル登録</h2>
+      <select v-model="selectedItemId">
+        <option disabled value="">アイテムを選択</option>
+        <option v-for="item in items" :value="item.id">{{ item.name }}</option>
+      </select>
+
+        <select v-model="selectedBorrowerId">
+          <option disabled value="">借り手を選択</option>
+          <option v-for="user in users" :key="user.id" :value="user.id" v-if="user && user.id !== currentUser.id">
+            {{ user.username }}
+          </option>
+        </select>
+    </div>
+
+      <button @click="registerRental">貸し出し</button>
+
+    <!-- 全てのrentalsを表示する(ログイン後に表示) -->
+    <div class="section" v-if="currentUser && login_ok">
+      <h2>レンタル一覧</h2>
+      <!-- {{rentals}} -->
+      <ul>
+        <li v-for="rental in rentals">
+<!-- {id: 1, item: 'Laptop', lender: 'alice', borrower: 'bob', status: 'ongoing'} -->
+            <strong>アイテム:</strong> {{ rental.item }}<br>
+            <strong>貸し手:</strong> {{ rental.lender }}<br>
+            <strong>借り手:</strong> {{ rental.borrower }}<br>
+            <strong>ステータス:</strong> {{ rental.status }}<br>
+            <!-- <button @click="returnItem(rental.id)">返却</button> -->
+        </li>
+      </ul>
+    </div>
+
+
+
+    <div class="section">
+      <h2>サンプルデータ</h2>
+      <button @click="seedData">サンプルデータを挿入</button>
+    </div>
+  </div>
+
+
+
+
+</div>
+<script>
+const app = Vue.createApp({
+      data() {
+        return {
+        login_ok: false,
+          endpoint: 'http://localhost:3000', // エンドポイントを設定
+          login: { username: 'alice', password: 'pass123' },
+          currentUser: null,
+          users: [],
+          items: [],
+          rentals: [],
+          newItemName: '',
+          selectedItemId: '',
+          selectedBorrowerId: ''
+        };
+      },
+    //   mounted() {
+    async mounted() {
+        // this.loadUsers();
+        // this.loadItems();
+        // this.loadRentals();
+        await this.loginUser();
+      },
+      methods: {
+        async registerUser() {
+          const res = await fetch(`${this.endpoint}/create_rent_users`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.login)
+          });
+          const data = await res.json();
+          if (data.success) {
+            // alert('ユーザー登録成功');
+            console.log('ユーザー登録成功');
+            this.loadUsers();
+          } else {
+            // alert('登録失敗');
+            console.log('登録失敗');
+          }
+        },
+        async loginUser() {
+try {
+                
+          const res = await fetch(`${this.endpoint}/rent_login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(this.login)
+          });
+          const data = await res.json();
+          console.log(data);
+          if (data.success) {
+            this.login_ok = true;
+            this.currentUser = data.user;
+            // this.users
+            this.items = data.items;
+            this.rentals = data.rentals;
+            this.selectedItemId = '';
+            this.selectedBorrowerId = '';
+            this.loadUsers();
+            this.loadItems();
+            this.loadRentals();
+
+            // alert('ログイン成功');
+            console.log('ログイン成功');
+            // await this.loadUsers();
+            // this.loadItems();
+            // this.loadRentals();
+          } else {
+            // alert('ログイン失敗');
+            console.log('ログイン失敗');
+          }
+    } catch (error) {
+        console.error('ログインエラー サーバー起動確認して', error);
+}
+        },
+        async loadUsers() {
+            console.log('loadUsers');
+          const res = await fetch(`${this.endpoint}/load_rent_users`);
+          if (res.ok) this.users = await res.json();
+        },
+        async loadItems() {
+          const res = await fetch(`${this.endpoint}/rent_items`);
+          if (res.ok) this.items = await res.json();
+        },
+        async loadRentals() {
+          const res = await fetch(`${this.endpoint}/rent_rentals`);
+          if (res.ok) this.rentals = await res.json();
+        },
+        async addItem() {
+          if (!this.newItemName || !this.currentUser) {
+            alert('ログインしてからアイテムを登録してください');
+            return;
+          }
+          const res = await fetch(`${this.endpoint}/create_rentals`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: this.newItemName, owner_id: this.currentUser.id })
+          });
+          const data = await res.json();
+          if (data.success) {
+            this.newItemName = '';
+            this.loadItems();
+          } else {
+            // alert('登録失敗');
+            console.log('登録失敗');
+          }
+        },
+        async registerRental() {
+          if (!this.selectedItemId || !this.selectedBorrowerId || !this.currentUser) {
+            // alert('ログインしてからレンタル登録を行ってください');
+            console.log('ログインしてからレンタル登録を行ってください');
+            return;
+          }
+          const res = await fetch(`${this.endpoint}/rent_rentals`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              item_id: parseInt(this.selectedItemId),
+              lender_id: this.currentUser.id,
+              borrower_id: parseInt(this.selectedBorrowerId)
+            })
+          });
+          const data = await res.json();
+          if (data.success) {
+            // alert('レンタル登録完了');
+            console.log('レンタル登録完了');
+            this.loadRentals();
+          } else {
+            // alert('レンタル登録失敗');
+            console.log('レンタル登録失敗');
+          }
+        },
+        async seedData() {
+          const res = await fetch(`${this.endpoint}/rent_seed`, { method: 'POST' });
+          const data = await res.json();
+          if (data.success) {
+            // alert('サンプルデータ挿入完了');
+            console.log('サンプルデータ挿入完了');
+            this.loadUsers();
+            this.loadItems();
+            this.loadRentals();
+          } else {
+            // alert('挿入失敗');
+            console.log('挿入失敗');
+          }
+        }
+      }
+    }).mount('#app');
+
+  </script>
+</body>
+</html>
