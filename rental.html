@@ -31,22 +31,26 @@
       </ul>
     </div>
 
-    <div class="section" v-if="currentUser && users.length > 0  && login_ok">
+    <div class="section" v-if="currentUser && users.length > 0  && login_ok && rent_ok_users.length > 0">
       <h2>レンタル登録</h2>
       <select v-model="selectedItemId">
         <option disabled value="">アイテムを選択</option>
         <option v-for="item in items" :value="item.id">{{ item.name }}</option>
       </select>
-
-        <select v-model="selectedBorrowerId">
-          <option disabled value="">借り手を選択</option>
-          <option v-for="user in users" :key="user.id" :value="user.id" v-if="user && user.id !== currentUser.id">
-            {{ user.username }}
-          </option>
-        </select>
+      <select v-model="selectedBorrowerId">
+        <option disabled value="">借り手を選択</option>
+        <option v-for="user in rent_ok_users" :value="user.id">
+          {{ user.username }}
+        </option>
+      </select>
+      <!-- 貸し出し実行 registerRental -->
+      <div v-if="selectedItemId && selectedBorrowerId">
+        <p>貸し出しアイテム: {{ items.find(item => item.id === selectedItemId)?.name }}</p>
+        <p>借り手: {{ rent_ok_users.find(user => user.id === selectedBorrowerId)?.username }}</p>
+        <button @click="registerRental">貸し出し</button>
+      </div>
     </div>
 
-      <button @click="registerRental">貸し出し</button>
 
     <!-- 全てのrentalsを表示する(ログイン後に表示) -->
     <div class="section" v-if="currentUser && login_ok">
@@ -54,12 +58,25 @@
       <!-- {{rentals}} -->
       <ul>
         <li v-for="rental in rentals">
-<!-- {id: 1, item: 'Laptop', lender: 'alice', borrower: 'bob', status: 'ongoing'} -->
             <strong>アイテム:</strong> {{ rental.item }}<br>
             <strong>貸し手:</strong> {{ rental.lender }}<br>
             <strong>借り手:</strong> {{ rental.borrower }}<br>
             <strong>ステータス:</strong> {{ rental.status }}<br>
-            <!-- <button @click="returnItem(rental.id)">返却</button> -->
+            <button @click="returnItem(rental.id)" v-if="rental.status !== 'returned'">返却</button>
+        </li>
+      </ul>
+    </div>
+
+    <!-- returned一覧 -->
+     <!-- status: returnedのrentalがある場合だけ表示 -->
+    <div class="section" v-if="currentUser && login_ok && rentals.some(rental => rental.status === 'returned')">
+      <h2>返却済み一覧</h2>
+      <ul>
+        <li v-for="rental in rentals">
+            <strong>アイテム:</strong> {{ rental.item }}<br>
+            <strong>貸し手:</strong> {{ rental.lender }}<br>
+            <strong>借り手:</strong> {{ rental.borrower }}<br>
+            <strong>ステータス:</strong> {{ rental.status }}<br>
         </li>
       </ul>
     </div>
@@ -89,7 +106,8 @@ const app = Vue.createApp({
           rentals: [],
           newItemName: '',
           selectedItemId: '',
-          selectedBorrowerId: ''
+          selectedBorrowerId: '',
+          rent_ok_users: [],
         };
       },
     //   mounted() {
@@ -155,6 +173,7 @@ try {
             console.log('loadUsers');
           const res = await fetch(`${this.endpoint}/load_rent_users`);
           if (res.ok) this.users = await res.json();
+          if (res.ok) this.rent_ok_users = this.users.filter(user => user.id !== this.currentUser.id);
         },
         async loadItems() {
           const res = await fetch(`${this.endpoint}/rent_items`);
@@ -189,7 +208,7 @@ try {
             console.log('ログインしてからレンタル登録を行ってください');
             return;
           }
-          const res = await fetch(`${this.endpoint}/rent_rentals`, {
+          const res = await fetch(`${this.endpoint}/register_rental`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -221,7 +240,41 @@ try {
             // alert('挿入失敗');
             console.log('挿入失敗');
           }
-        }
+        },
+        //             <button @click="returnItem(rental.id)">返却</button> のためのエンドポイント
+// レンタル返却
+// app.post('/return_rental', (req, res) => {
+//   const { rental_id } = req.body;
+//   try {
+//     rental_db.prepare(`
+//       UPDATE rent_rentals
+//       SET status = 'returned'
+//       WHERE id = ?
+//     `).run(rental_id);
+//     res.json({ success: true, message: 'レンタルを返却しました。' });
+//   } catch (error) {
+//     console.error('レンタル返却エラー:', error);
+//     res.status(500).json({ success: false, error: 'レンタル返却に失敗しました。' });
+//   }
+// });
+        async returnItem(rentalId) {
+          const res = await fetch(`${this.endpoint}/return_rental`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rental_id: rentalId })
+          });
+          const data = await res.json();
+          if (data.success) {
+            // alert('アイテムを返却しました');
+            console.log('アイテムを返却しました');
+            this.loadRentals();
+          } else {
+            // alert('返却失敗');
+            console.log('返却失敗');
+          }
+        },
+
+
       }
     }).mount('#app');
 
